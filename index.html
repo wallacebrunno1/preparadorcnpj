@@ -1357,8 +1357,8 @@
                     <button type="button" id="btnPresetDDNS" class="preset-btn" onclick="applyPreset('DDNS')">
                         🌐 Conexão DDNS (Remoto)
                     </button>
-                    <button type="button" id="btnDetectRegistry" class="preset-btn" style="border-color: rgba(0, 210, 255, 0.45); background: rgba(0, 210, 255, 0.12); color: #00d2ff;" onclick="checkRegistryAutoDetect(true)">
-                        ⚡ Detectar do Registro (SDSuper)
+                    <button type="button" id="btnDetectRegistry" class="preset-btn" style="border-color: rgba(0, 210, 255, 0.45); background: rgba(0, 210, 255, 0.12); color: #00d2ff;" onclick="checkRegistryAutoDetect(true)" title="Caminho no Registro: HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\SDSuper">
+                        ⚡ Detectar do Registro
                     </button>
                 </div>
 
@@ -1423,35 +1423,35 @@
                     <span class="badge badge-success" style="font-size: 10px; padding: 2px 8px;">Seguro Executar Antes</span>
                 </div>
                 <div class="options-box" style="margin-bottom: 14px;">
-                    <label class="option-item">
+                    <label class="option-item" title="Altera a tabela PERMISSOES no Firebird">
                         <input type="checkbox" id="chkPermissoes" checked>
                         <div class="option-content">
                             <h4>Replicar Permissões SDSuper</h4>
-                            <p>Clona permissões da filial origem para a filial destino (<code>PERMISSOES</code>). Usuários que operam em outra loja usam sua filial de trabalho como modelo.</p>
+                            <p>Clona permissões da filial origem para a filial destino. Usuários que operam em outra loja usam sua filial de trabalho como modelo.</p>
                         </div>
                     </label>
-                    <label class="option-item">
+                    <label class="option-item" title="Altera as tabelas WFILIAISPDVS e WPERMISSOESPDVS no Firebird">
                         <input type="checkbox" id="chkPdvs" checked>
                         <div class="option-content">
                             <h4>Liberar Nova Filial no Caixa (Operadores PDV)</h4>
-                            <p>Acrescenta a filial em <code>WFILIAISPDVS</code> apenas para quem já opera PDV (<code>WPERMISSOESPDVS</code>). Protege usuários administrativos.</p>
+                            <p>Acrescenta a filial nos caixas apenas para quem já opera PDV. Protege usuários administrativos.</p>
                         </div>
                     </label>
-                    <label class="option-item" style="border-color: rgba(16, 185, 129, 0.35); background: rgba(10, 15, 29, 0.65);">
+                    <label class="option-item" style="border-color: rgba(16, 185, 129, 0.35); background: rgba(10, 15, 29, 0.65);" title="Altera a tabela NFECONFIGURACAOFILIAIS e o generator GENIDNFENUMEROF">
                         <input type="checkbox" id="chkNfePadrao" checked>
                         <div class="option-content">
                             <h4 style="color: #34d399;">Inicializar Configurações de NF-e e TecnoSpeed</h4>
-                            <p>Cria registro fiscal Série 0, Número 0 em <code>NFECONFIGURACAOFILIAIS</code> e zera o generator de numeração.</p>
+                            <p>Cria registro fiscal Série 0, Número 0 e inicializa o contador de numeração fiscal da filial.</p>
                         </div>
                     </label>
-                    <label class="option-item" style="border-color: rgba(0, 210, 255, 0.35); background: rgba(10, 15, 29, 0.65);">
+                    <label class="option-item" style="border-color: rgba(0, 210, 255, 0.35); background: rgba(10, 15, 29, 0.65);" title="Altera a tabela ANTPROMOCOES (campos WFILIAIS e colunas de filiais ativas)">
                         <input type="checkbox" id="chkPromocoesAtivas" checked>
                         <div class="option-content">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <h4 style="color: var(--accent-cyan); margin: 0;">Incluir Nova Filial nas Promoções Ativas (<code>ANTPROMOCOES</code>)</h4>
+                                <h4 style="color: var(--accent-cyan); margin: 0;">Incluir Nova Filial nas Promoções Ativas</h4>
                                 <span id="badgePromocoesAtivas" class="badge badge-neutral" style="font-size: 10px;">Banco: Carregando...</span>
                             </div>
-                            <p style="margin-top: 3px;">Acrescenta a nova filial em <code>WFILIAIS</code> e marca <code>WFIL{dest} = 'S'</code> nos produtos de todas as promoções ativas, garantindo que os caixas já recebam as promoções sem esperar o dia da virada.</p>
+                            <p style="margin-top: 3px;">Habilita a nova filial nos produtos de todas as promoções ativas, garantindo que os caixas já recebam as promoções sem esperar o dia da virada.</p>
                         </div>
                     </label>
                 </div>
@@ -1467,11 +1467,11 @@
 
                     <div class="options-box" style="gap: 8px;">
                         <!-- 1. GENIDFILIALPADRAO -->
-                        <label class="option-item" style="border-color: rgba(245, 158, 11, 0.25); background: rgba(10, 15, 29, 0.65);">
+                        <label class="option-item" style="border-color: rgba(245, 158, 11, 0.25); background: rgba(10, 15, 29, 0.65);" title="Atualiza o generator GENIDFILIALPADRAO no Firebird">
                             <input type="checkbox" id="chkGenFilialPadrao">
                             <div class="option-content">
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <h4 style="color: #fbbf24; margin: 0;">Definir Nova Filial como Ativa no Sistema (<code>GENIDFILIALPADRAO</code>)</h4>
+                                    <h4 style="color: #fbbf24; margin: 0;">Definir Nova Filial como Ativa no Sistema</h4>
                                     <span id="badgeCurrentGenPadrao" class="badge badge-neutral" style="font-size: 10px;">Banco: Carregando...</span>
                                 </div>
                                 <p style="margin-top: 3px;">Atualiza o sequencial de filial padrão ao iniciar o SDSuper.</p>
@@ -1479,11 +1479,11 @@
                         </label>
 
                         <!-- 2. WIDFILIALTRABALHO (Filial de Acesso) -->
-                        <div class="option-item" style="border-color: rgba(0, 210, 255, 0.35); background: rgba(10, 15, 29, 0.65); display: flex; flex-direction: column; gap: 6px;">
+                        <div class="option-item" style="border-color: rgba(0, 210, 255, 0.35); background: rgba(10, 15, 29, 0.65); display: flex; flex-direction: column; gap: 6px;" title="Atualiza a coluna WIDFILIALTRABALHO na tabela USUARIOS">
                             <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer; width: 100%; margin: 0;">
                                 <input type="checkbox" id="chkFilialAcesso" style="margin-top: 3px;">
                                 <div class="option-content" style="flex: 1;">
-                                    <h4 style="color: var(--accent-cyan); margin: 0;">Mudar Filial de Login/Acesso dos Usuários (<code>WIDFILIALTRABALHO</code>)</h4>
+                                    <h4 style="color: var(--accent-cyan); margin: 0;">Mudar Filial de Login/Acesso dos Usuários</h4>
                                     <p style="margin-top: 3px;">Direciona o login dos colaboradores selecionados para a nova filial.</p>
                                 </div>
                             </label>
@@ -1498,11 +1498,11 @@
                         </div>
 
                         <!-- 3. CONTROLE.WIDFILIALPRODUTOS -->
-                        <label class="option-item" style="border-color: rgba(245, 158, 11, 0.25); background: rgba(10, 15, 29, 0.65);">
+                        <label class="option-item" style="border-color: rgba(245, 158, 11, 0.25); background: rgba(10, 15, 29, 0.65);" title="Atualiza o campo WIDFILIALPRODUTOS na tabela CONTROLE">
                             <input type="checkbox" id="chkWidFilialProdutos">
                             <div class="option-content">
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <h4 style="color: #fff; margin: 0;">Mudar Filial de Cadastro de Produtos (<code>CONTROLE.WIDFILIALPRODUTOS</code>)</h4>
+                                    <h4 style="color: #fff; margin: 0;">Mudar Filial de Cadastro de Produtos</h4>
                                     <span id="badgeCurrentFilialProd" class="badge badge-neutral" style="font-size: 10px;">Banco: Carregando...</span>
                                 </div>
                                 <p style="margin-top: 3px;">Vincula novos produtos e espelhos cadastrados diretamente à nova filial.</p>
@@ -1510,11 +1510,11 @@
                         </label>
 
                         <!-- 4. FILIAISCONTROLE.WVERSAOBANCO -->
-                        <label class="option-item" style="border-color: rgba(16, 185, 129, 0.25); background: rgba(10, 15, 29, 0.65);">
+                        <label class="option-item" style="border-color: rgba(16, 185, 129, 0.25); background: rgba(10, 15, 29, 0.65);" title="Atualiza a coluna WVERSAOBANCO na tabela FILIAISCONTROLE">
                             <input type="checkbox" id="chkSyncVersaoBanco" checked>
                             <div class="option-content">
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <h4 style="color: #34d399; margin: 0;">Sincronizar Versão do Banco (<code>FILIAISCONTROLE.WVERSAOBANCO</code>)</h4>
+                                    <h4 style="color: #34d399; margin: 0;">Sincronizar Versão do Banco</h4>
                                     <span id="badgeCurrentVersaoBanco" class="badge badge-warning" style="font-size: 10px;">Pendente</span>
                                 </div>
                                 <p style="margin-top: 3px;">Atualiza a versão do banco para evitar mensagem de incompatibilidade ao logar.</p>
@@ -1522,22 +1522,22 @@
                         </label>
 
                         <!-- 5. FILIAL PREÇOS DA PROMOÇÃO (Registro do Windows) -->
-                        <label class="option-item" style="border-color: rgba(245, 158, 11, 0.25); background: rgba(10, 15, 29, 0.65);">
+                        <label class="option-item" style="border-color: rgba(245, 158, 11, 0.25); background: rgba(10, 15, 29, 0.65);" title="Atualiza a chave FilialPrecosPromocao no Registro do Windows e a tabela FILIAIS">
                             <input type="checkbox" id="chkFilialPrecosPromocao">
                             <div class="option-content">
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <h4 style="color: #fbbf24; margin: 0;">Mudar Filial de Preços da Promoção (<code>FilialPrecosPromocao</code>)</h4>
+                                    <h4 style="color: #fbbf24; margin: 0;">Mudar Filial de Preços da Promoção</h4>
                                     <span id="badgeCurrentFilialPrecosPromo" class="badge badge-neutral" style="font-size: 10px;">Registro: Carregando...</span>
                                 </div>
-                                <p style="margin-top: 3px;">Define no Registro do Windows (<code>FilialPrecosPromocao</code>) e na tabela <code>FILIAIS</code> a filial padrão de custos/preços exibida na tela de promoções do SDSuper.</p>
+                                <p style="margin-top: 3px;">Define a filial padrão de custos e preços exibida na tela de promoções do SDSuper.</p>
                             </div>
                         </label>
 
                         <!-- 6. WIDFILIAL Cadastro Base -->
-                        <label class="option-item" style="border-color: rgba(255, 255, 255, 0.08); background: rgba(10, 15, 29, 0.4);">
+                        <label class="option-item" style="border-color: rgba(255, 255, 255, 0.08); background: rgba(10, 15, 29, 0.4);" title="Atualiza a coluna WIDFILIAL na tabela USUARIOS">
                             <input type="checkbox" id="chkFilialCadastro">
                             <div class="option-content">
-                                <h4 style="color: var(--text-muted); margin: 0;">Mudar Filial de Cadastro Base (<code>USUARIOS.WIDFILIAL</code>) <span class="badge-standby">OPCIONAL</span></h4>
+                                <h4 style="color: var(--text-muted); margin: 0;">Mudar Filial de Cadastro Base <span class="badge-standby">OPCIONAL</span></h4>
                                 <p style="margin-top: 3px;">Atualiza o campo base de cadastro dos usuários.</p>
                             </div>
                         </label>
@@ -1704,7 +1704,7 @@
                 <div class="card-title" style="justify-content: space-between; flex-wrap: wrap; gap: 12px;">
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-                        <span>Cadastro & Dados da Filial / CNPJ (<code>FILIAIS</code>)</span>
+                        <span>Cadastro & Dados da Filial / CNPJ</span>
                     </div>
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <span id="badgeFilialStatus" class="badge badge-success">Filial Ativa</span>
@@ -1765,37 +1765,37 @@
 
                 <div class="form-row">
                     <div class="form-group" style="flex: 2;">
-                        <label>Razão Social (<code>WRAZAO</code>)</label>
+                        <label title="Coluna no banco: WRAZAO">Razão Social</label>
                         <input type="text" id="txtFilialRazao" class="form-control" maxlength="60" placeholder="Razão Social completa da filial">
                     </div>
                     <div class="form-group" style="flex: 2;">
-                        <label>Nome Fantasia (<code>WFANTASIA</code>)</label>
+                        <label title="Coluna no banco: WFANTASIA">Nome Fantasia</label>
                         <input type="text" id="txtFilialFantasia" class="form-control" maxlength="30" placeholder="Nome Fantasia">
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Inscrição Estadual (<code>WINSCRICAOESTADUAL</code>)</label>
+                        <label title="Coluna no banco: WINSCRICAOESTADUAL">Inscrição Estadual</label>
                         <input type="text" id="txtFilialIE" class="form-control" maxlength="20" placeholder="Inscrição Estadual">
                     </div>
                     <div class="form-group">
-                        <label>Nome do Representante Legal (<code>WNOMEREPRESENTANTE</code>)</label>
+                        <label title="Coluna no banco: WNOMEREPRESENTANTE">Nome do Representante Legal</label>
                         <input type="text" id="txtFilialRepresentante" class="form-control" maxlength="50" placeholder="Nome do representante legal">
                     </div>
                     <div class="form-group">
-                        <label>Nome do Contato (<code>WCONTATO</code>)</label>
+                        <label title="Coluna no banco: WCONTATO">Nome do Contato</label>
                         <input type="text" id="txtFilialContato" class="form-control" maxlength="50" placeholder="Responsável pelo contato">
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group" style="flex: 2;">
-                        <label>E-mail Geral da Filial (<code>WEMAIL</code>)</label>
+                        <label title="Coluna no banco: WEMAIL">E-mail Geral da Filial</label>
                         <input type="email" id="txtFilialEmail" class="form-control" maxlength="50" placeholder="email@empresa.com.br">
                     </div>
                     <div class="form-group" style="flex: 1;">
-                        <label>Telefone Geral (<code>WTELEFONEGERAL</code>)</label>
+                        <label title="Coluna no banco: WTELEFONEGERAL">Telefone Geral</label>
                         <input type="text" id="txtFilialTelefone" class="form-control" maxlength="30" placeholder="(99) 99999-9999">
                     </div>
                 </div>
@@ -1813,31 +1813,31 @@
 
                 <div class="form-row">
                     <div class="form-group" style="flex: 1;">
-                        <label>CEP (<code>WCEP</code>)</label>
+                        <label title="Coluna no banco: WCEP">CEP</label>
                         <input type="text" id="txtFilialCep" class="form-control" maxlength="9" placeholder="00000-000" oninput="maskCep(this)">
                     </div>
                     <div class="form-group" style="flex: 3;">
-                        <label>Logradouro / Endereço (<code>WENDERECO</code>)</label>
+                        <label title="Coluna no banco: WENDERECO">Logradouro / Endereço</label>
                         <input type="text" id="txtFilialEndereco" class="form-control" maxlength="60" placeholder="Rua, Avenida, Praça...">
                     </div>
                     <div class="form-group" style="flex: 1;">
-                        <label>Número (<code>WNUMERO</code>)</label>
+                        <label title="Coluna no banco: WNUMERO">Número</label>
                         <input type="text" id="txtFilialNumero" class="form-control" maxlength="20" placeholder="Nº">
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group" style="flex: 1;">
-                        <label>Complemento (<code>WCOMPLEMENTO</code>)</label>
+                        <label title="Coluna no banco: WCOMPLEMENTO">Complemento</label>
                         <input type="text" id="txtFilialComplemento" class="form-control" maxlength="20" placeholder="Sala, Loja, Galpão...">
                     </div>
                     <div class="form-group" style="flex: 2;">
-                        <label>Bairro (<code>WIDBAIRRO</code> / <code>WNOMEBAIRRO</code>)</label>
+                        <label title="Colunas no banco: WIDBAIRRO e WNOMEBAIRRO">Bairro</label>
                         <input type="text" id="txtFilialBairro" class="form-control" maxlength="35" placeholder="Nome do Bairro (auto-cadastrado se novo)">
                         <input type="hidden" id="hdnFilialIdBairro">
                     </div>
                     <div class="form-group" style="flex: 2;">
-                        <label>Município / Cidade (<code>WIDCIDADE</code> / <code>WNOMECIDADE</code>)</label>
+                        <label title="Colunas no banco: WIDCIDADE e WNOMECIDADE">Município / Cidade</label>
                         <input type="text" id="txtFilialCidade" class="form-control" maxlength="35" placeholder="Nome da Cidade (ex: Cabo Frio)">
                         <input type="hidden" id="hdnFilialIdCidade">
                     </div>
@@ -1864,61 +1864,61 @@
 
                 <div class="form-row">
                     <div class="form-group" style="flex: 2;">
-                        <label>Nome / Razão da Contabilidade (<code>WNOMECONTADOR</code>)</label>
+                        <label title="Coluna no banco: WNOMECONTADOR">Nome / Razão da Contabilidade</label>
                         <input type="text" id="txtContadorNome" class="form-control" maxlength="100" placeholder="Nome da contabilidade ou contador">
                     </div>
                     <div class="form-group" style="flex: 1;">
-                        <label>CNPJ da Contabilidade (<code>WCNPJCONTADOR</code>)</label>
+                        <label title="Coluna no banco: WCNPJCONTADOR">CNPJ da Contabilidade</label>
                         <input type="text" id="txtContadorCnpj" class="form-control" maxlength="20" placeholder="CNPJ da contabilidade">
                     </div>
                     <div class="form-group" style="flex: 1;">
-                        <label>CPF do Contador (<code>WCPFCONTADOR</code>)</label>
+                        <label title="Coluna no banco: WCPFCONTADOR">CPF do Contador</label>
                         <input type="text" id="txtContadorCpf" class="form-control" maxlength="20" placeholder="000.000.000-00">
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label>CRC (<code>WCRCCONTADOR</code>)</label>
+                        <label title="Coluna no banco: WCRCCONTADOR">CRC</label>
                         <input type="text" id="txtContadorCrc" class="form-control" maxlength="15" placeholder="Registro CRC">
                     </div>
                     <div class="form-group" style="flex: 1.5;">
-                        <label>E-mail do Contador (<code>WEMAILCONTADOR</code>)</label>
+                        <label title="Coluna no banco: WEMAILCONTADOR">E-mail do Contador</label>
                         <input type="email" id="txtContadorEmail" class="form-control" maxlength="50" placeholder="fiscal@contabilidade.com.br">
                     </div>
                     <div class="form-group">
-                        <label>Telefone do Contador (<code>WTELEFONECONTADOR</code>)</label>
+                        <label title="Coluna no banco: WTELEFONECONTADOR">Telefone do Contador</label>
                         <input type="text" id="txtContadorTelefone" class="form-control" maxlength="30" placeholder="(99) 9999-9999">
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group" style="flex: 1;">
-                        <label>CEP Contador (<code>WCEPCONTADOR</code>)</label>
+                        <label title="Coluna no banco: WCEPCONTADOR">CEP Contador</label>
                         <input type="text" id="txtContadorCep" class="form-control" maxlength="9" placeholder="00000-000" oninput="maskCep(this)">
                     </div>
                     <div class="form-group" style="flex: 2;">
-                        <label>Endereço / Logradouro (<code>WENDERECOCONTADOR</code>)</label>
+                        <label title="Coluna no banco: WENDERECOCONTADOR">Endereço / Logradouro</label>
                         <input type="text" id="txtContadorEndereco" class="form-control" maxlength="60" placeholder="Rua / Avenida">
                     </div>
                     <div class="form-group" style="flex: 0.8;">
-                        <label>Número (<code>WNUMEROCONTADOR</code>)</label>
+                        <label title="Coluna no banco: WNUMEROCONTADOR">Número</label>
                         <input type="text" id="txtContadorNumero" class="form-control" maxlength="20" placeholder="Nº">
                     </div>
                     <div class="form-group" style="flex: 1;">
-                        <label>Complemento (<code>WCOMPLEMENTOCONTADOR</code>)</label>
+                        <label title="Coluna no banco: WCOMPLEMENTOCONTADOR">Complemento</label>
                         <input type="text" id="txtContadorComplemento" class="form-control" maxlength="20" placeholder="Sala">
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group" style="flex: 2;">
-                        <label>Bairro do Contador (<code>WIDBAIRROCONTADOR</code>)</label>
+                        <label title="Coluna no banco: WIDBAIRROCONTADOR">Bairro do Contador</label>
                         <input type="text" id="txtContadorBairro" class="form-control" maxlength="35" placeholder="Bairro">
                         <input type="hidden" id="hdnContadorIdBairro">
                     </div>
                     <div class="form-group" style="flex: 2;">
-                        <label>Cidade do Contador (<code>WIDCIDADECONTADOR</code>)</label>
+                        <label title="Coluna no banco: WIDCIDADECONTADOR">Cidade do Contador</label>
                         <input type="text" id="txtContadorCidade" class="form-control" maxlength="35" placeholder="Cidade">
                         <input type="hidden" id="hdnContadorIdCidade">
                     </div>
@@ -1951,45 +1951,45 @@
 
                 <div class="form-row">
                     <div class="form-group" style="flex: 1;">
-                        <label>Filial de Preços Venda (<code>WIDFILIALPRECOS</code>)</label>
+                        <label title="Coluna no banco: WIDFILIALPRECOS">Filial de Preços Venda</label>
                         <select id="selFilialPrecos" class="form-control"></select>
                     </div>
                     <div class="form-group" style="flex: 1;">
-                        <label>Filial de Estoque (<code>WIDFILIALESTOQUE</code>)</label>
+                        <label title="Coluna no banco: WIDFILIALESTOQUE">Filial de Estoque</label>
                         <select id="selFilialEstoque" class="form-control"></select>
                     </div>
                     <div class="form-group" style="flex: 1;">
-                        <label>Filial Emissão NF-e (<code>WIDFILIALNFE</code>)</label>
+                        <label title="Coluna no banco: WIDFILIALNFE">Filial Emissão NF-e</label>
                         <select id="selFilialNfe" class="form-control"></select>
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group" style="flex: 1;">
-                        <label>Filial Saídas Fiscais (<code>WIDFILIALSAIDASFISCAIS</code>)</label>
+                        <label title="Coluna no banco: WIDFILIALSAIDASFISCAIS">Filial Saídas Fiscais</label>
                         <select id="selFilialSaidasFiscais" class="form-control"></select>
                     </div>
                     <div class="form-group" style="flex: 1;">
-                        <label style="color: var(--accent-cyan); font-weight: 700;">Filial Carga (<code>WIDFILIALCARGA</code>) ⭐</label>
+                        <label style="color: var(--accent-cyan); font-weight: 700;" title="Coluna no banco: WIDFILIALCARGA (Filial que gera a carga para os caixas)">Filial Carga ⭐</label>
                         <select id="selFilialCarga" class="form-control" style="border-color: rgba(0, 210, 255, 0.45);"></select>
                     </div>
                     <div class="form-group" style="flex: 1;">
-                        <label>Filial Transferência (<code>WIDFILIALTRANSF</code>)</label>
+                        <label title="Coluna no banco: WIDFILIALTRANSF">Filial Transferência</label>
                         <select id="selFilialTransf" class="form-control"></select>
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group" style="flex: 1;">
-                        <label>Filial Movimento (<code>WIDFILIALMOVIMENTO</code>)</label>
+                        <label title="Coluna no banco: WIDFILIALMOVIMENTO">Filial Movimento</label>
                         <select id="selFilialMovimento" class="form-control"></select>
                     </div>
                     <div class="form-group" style="flex: 1;">
-                        <label>Filial Etiquetas (<code>WIDFILIALETIQ</code>)</label>
+                        <label title="Coluna no banco: WIDFILIALETIQ">Filial Etiquetas</label>
                         <select id="selFilialEtiq" class="form-control"></select>
                     </div>
                     <div class="form-group" style="flex: 1;">
-                        <label>Filial Comandas (<code>WIDFILIALCOMANDA</code>)</label>
+                        <label title="Coluna no banco: WIDFILIALCOMANDA">Filial Comandas</label>
                         <select id="selFilialComanda" class="form-control"></select>
                     </div>
                 </div>
@@ -2030,11 +2030,11 @@
 
                 <div class="form-row">
                     <div class="form-group" style="flex: 3;">
-                        <label>Caminho SDTerminal da Rede (<code>WCAMINHOSDTERMINAL</code>)</label>
+                        <label title="Coluna no banco: WCAMINHOSDTERMINAL">Caminho SDTerminal da Rede</label>
                         <input type="text" id="txtFilialCaminhoTerminal" class="form-control" maxlength="200" placeholder="\\10.0.0.112\SDPROGS$\SDTERMINAL\">
                     </div>
                     <div class="form-group" style="flex: 1.5;">
-                        <label>IP Concentrador / PDV (<code>WIPPDV</code>)</label>
+                        <label title="Coluna no banco: WIPPDV">IP Concentrador / PDV</label>
                         <input type="text" id="txtFilialIpPdv" class="form-control" maxlength="20" placeholder="10.0.0.112">
                     </div>
                 </div>
@@ -2095,7 +2095,7 @@
                 <div class="card-title" style="justify-content: space-between; flex-wrap: wrap; gap: 12px;">
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                        <span>Parâmetros Fiscais de NF-e e Certificado Digital (<code>NFECONFIGURACAOFILIAIS</code>)</span>
+                        <span>Parâmetros Fiscais de NF-e e Certificado Digital</span>
                     </div>
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <span id="badgeNfeAmbiente" class="badge badge-success">Ambiente: PRODUÇÃO</span>
@@ -2154,11 +2154,11 @@
                             <input type="number" id="txtNfePrazoDownload" class="form-control" value="30">
                         </div>
                         <div class="form-group">
-                            <label>Número NF-e (<code>GENIDNFENUMEROF</code>)</label>
+                            <label title="Generator no banco: GENIDNFENUMEROF">Número NF-e</label>
                             <input type="number" id="txtNfeNumero" class="form-control" value="0" style="font-weight: 700; color: #34d399; font-family: 'JetBrains Mono', monospace;">
                         </div>
                         <div class="form-group">
-                            <label>Série NF-e (<code>WNFESERIE</code>)</label>
+                            <label title="Coluna no banco: WNFESERIE">Série NF-e</label>
                             <input type="number" id="txtNfeSerie" class="form-control" value="0" style="font-weight: 700; color: #34d399; font-family: 'JetBrains Mono', monospace;">
                         </div>
                     </div>
@@ -2386,7 +2386,7 @@
                     <div class="form-row" style="align-items: flex-end;">
                         <div class="form-group" style="flex: 2;">
                             <label style="display: flex; justify-content: space-between; align-items: center;">
-                                <span>Senha do Certificado Digital / Aba PIN (<code>WPIN</code>)</span>
+                                <span title="Coluna no banco: WPIN">Senha do Certificado Digital (PIN)</span>
                                 <span style="font-size: 11px; font-weight: 400; color: var(--text-muted);">Criptografia oficial SDSuper</span>
                             </label>
                             <div style="position: relative; display: flex; align-items: center;">
@@ -2443,7 +2443,7 @@
 
                     <div class="form-row">
                         <div class="form-group" style="flex: 1.5;">
-                            <label>CNPJ Software House (<code>WCNPJSOFTWAREHOUSE</code>)</label>
+                            <label title="Coluna no banco: WCNPJSOFTWAREHOUSE">CNPJ Software House</label>
                             <input type="text" id="txtNfeCnpjSd" class="form-control" value="04.260.756/0001-20" maxlength="20">
                         </div>
                         <div class="form-group" style="flex: 1;">
@@ -2514,7 +2514,7 @@
                     </div>
 
                     <div class="form-group" style="margin-bottom: 12px;">
-                        <label style="font-size: 12px; margin-bottom: 6px; display: block;">Fechar Sentinela (<code>WPERMITEFECHAR</code>)</label>
+                        <label style="font-size: 12px; margin-bottom: 6px; display: block;" title="Coluna no banco: WPERMITEFECHAR">Fechar Sentinela</label>
                         <select id="selSentinelaFechar" class="form-control" style="font-weight: 600; color: #38bdf8;">
                             <option value="N" selected>IMPEDIR FECHAMENTO</option>
                             <option value="S">PERMITIR FECHAMENTO</option>
@@ -2522,7 +2522,7 @@
                     </div>
 
                     <div class="form-group" style="margin-bottom: 12px;">
-                        <label style="font-size: 12px; margin-bottom: 6px; display: block;">Registro de Log (<code>WATIVARLOG</code>)</label>
+                        <label style="font-size: 12px; margin-bottom: 6px; display: block;" title="Coluna no banco: WATIVARLOG">Registro de Log</label>
                         <select id="selSentinelaLog" class="form-control">
                             <option value="N" selected>DESATIVAR LOG</option>
                             <option value="S">ATIVAR LOG</option>
@@ -2530,7 +2530,7 @@
                     </div>
 
                     <div class="form-group" style="margin-bottom: 4px;">
-                        <label style="font-size: 12px; margin-bottom: 6px; display: block;">Controle de Estoque (<code>WMOVIMENTARESTOQUE</code>)</label>
+                        <label style="font-size: 12px; margin-bottom: 6px; display: block;" title="Coluna no banco: WMOVIMENTARESTOQUE">Controle de Estoque</label>
                         <select id="selSentinelaEstoque" class="form-control" style="font-weight: 600; color: #34d399;">
                             <option value="S" selected>HABILITADO CONTROLE PELO SD SUPER / SENTINELA</option>
                             <option value="N">DESABILITADO</option>
@@ -2552,7 +2552,7 @@
                     <div class="sentinela-toggle-item" style="background: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.3);">
                         <div>
                             <div style="display: flex; align-items: center; gap: 8px;">
-                                <b style="color: #fff; font-size: 13px;">Transmitir NF-e (<code>WTRANSMITIRNFE</code>)</b>
+                                <b style="color: #fff; font-size: 13px;" title="Coluna no banco: WTRANSMITIRNFE">Transmitir NF-e</b>
                                 <span class="badge badge-success" style="font-size: 10px; padding: 1px 6px;">Marcado por Padrão</span>
                             </div>
                             <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">
@@ -2565,7 +2565,7 @@
                     <!-- Gerar NFe -->
                     <div class="sentinela-toggle-item">
                         <div>
-                            <b style="color: #fff; font-size: 13px;">Gerar NF-e (<code>WGERARNFE</code>)</b>
+                            <b style="color: #fff; font-size: 13px;" title="Coluna no banco: WGERARNFE">Gerar NF-e</b>
                             <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">
                                 Habilita geração de arquivos e rotina fiscal de NF-e no Sentinela.
                             </div>
@@ -2577,7 +2577,7 @@
                     <div class="sentinela-toggle-item" style="background: rgba(14, 165, 233, 0.06); border-color: rgba(14, 165, 233, 0.25);">
                         <div>
                             <div style="display: flex; align-items: center; gap: 8px;">
-                                <b style="color: #fff; font-size: 13px;">Sincronizar Manifesto pelo Certificado (<code>WMANIFESTOAUTOMATICO</code>)</b>
+                                <b style="color: #fff; font-size: 13px;" title="Coluna no banco: WMANIFESTOAUTOMATICO">Sincronizar Manifesto pelo Certificado</b>
                                 <span class="badge badge-success" style="font-size: 10px; padding: 1px 6px;">Ativo</span>
                             </div>
                             <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">
@@ -2590,7 +2590,7 @@
                     <!-- Confirmar Manifesto -->
                     <div class="sentinela-toggle-item" style="margin-bottom: 0;">
                         <div>
-                            <b style="color: #fff; font-size: 13px;">Confirmar Operação no Manifesto (<code>WCONFIRMARMANIFESTO</code>)</b>
+                            <b style="color: #fff; font-size: 13px;" title="Coluna no banco: WCONFIRMARMANIFESTO">Confirmar Operação no Manifesto</b>
                             <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">
                                 Envia o evento de confirmação da operação / ciência da emissão para a SEFAZ.
                             </div>
@@ -2611,20 +2611,20 @@
 
                     <div class="form-row" style="margin-bottom: 14px;">
                         <div class="form-group" style="flex: 2;">
-                            <label style="font-size: 12px; margin-bottom: 6px; display: block;">Monitorar Ftp (<code>WMONFTP</code>)</label>
+                            <label style="font-size: 12px; margin-bottom: 6px; display: block;" title="Coluna no banco: WMONFTP">Monitorar Ftp</label>
                             <select id="selSentinelaMonFtp" class="form-control" style="font-weight: 600; color: #38bdf8;">
                                 <option value="1" selected>MONITORAMENTO HABILITADO</option>
                                 <option value="0">DESABILITADO</option>
                             </select>
                         </div>
                         <div class="form-group" style="flex: 1;">
-                            <label style="font-size: 12px; margin-bottom: 6px; display: block;">Hora (<code>WHORAFTP</code>)</label>
+                            <label style="font-size: 12px; margin-bottom: 6px; display: block;" title="Coluna no banco: WHORAFTP">Hora</label>
                             <input type="text" id="txtSentinelaHoraFtp" class="form-control" value="15:00" maxlength="5" style="text-align: center; font-weight: 700; font-family: 'JetBrains Mono', monospace;">
                         </div>
                     </div>
 
                     <label style="font-size: 12px; margin-bottom: 8px; display: block; color: var(--text-secondary); font-weight: 600;">
-                        Filiais Monitoradas no Ftp (<code>SENTINELASFTPFILIAIS</code>):
+                        Filiais Monitoradas no Ftp:
                     </label>
                     <div style="background: rgba(10, 15, 29, 0.7); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: var(--radius-sm); max-height: 150px; overflow-y: auto;">
                         <table class="sentinela-grid-table">
@@ -2653,7 +2653,7 @@
 
                     <div class="form-row" style="margin-bottom: 14px;">
                         <div class="form-group" style="flex: 2;">
-                            <label style="font-size: 12px; margin-bottom: 6px; display: block;">Importação de Vendas (<code>WATIVARVENDAS</code>)</label>
+                            <label style="font-size: 12px; margin-bottom: 6px; display: block;" title="Coluna no banco: WATIVARVENDAS">Importação de Vendas</label>
                             <select id="selSentinelaAtivarVendas" class="form-control" style="font-weight: 600; color: #a78bfa;">
                                 <option value="2" selected>HABILITADO (Puxar Vendas Ativo)</option>
                                 <option value="0">DESABILITADO</option>
@@ -2669,7 +2669,7 @@
                     </div>
 
                     <label style="font-size: 12px; margin-bottom: 8px; display: block; color: var(--text-secondary); font-weight: 600;">
-                        Filiais com Vendas Monitoradas (<code>SENTINELASFILIAIS</code>):
+                        Filiais com Vendas Monitoradas:
                     </label>
                     <div style="background: rgba(10, 15, 29, 0.7); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: var(--radius-sm); max-height: 150px; overflow-y: auto;">
                         <table class="sentinela-grid-table">
@@ -2696,7 +2696,7 @@
         <div class="selection-counter">
             <span id="selectedCount">0</span> usuários selecionados
         </div>
-        <button class="btn btn-primary" onclick="openConfirmModal()">
+        <button class="btn btn-primary" id="btnExecutarAcoes" onclick="openConfirmModal()" title="Modifica tabelas: PERMISSOES, WFILIAISPDVS, ANTPROMOCOES, FILIAIS, USUARIOS, CONTROLE">
             <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
             Aplicar Alteração nos Selecionados
         </button>
@@ -2707,7 +2707,7 @@
         <div class="selection-counter">
             Configurando <b style="color: #00d2ff;" id="lblActionFilialNum">Filial 2</b>
         </div>
-        <button class="btn btn-success" id="btnSalvarFilial" onclick="salvarDadosFilial()">
+        <button class="btn btn-success" id="btnSalvarFilial" onclick="salvarDadosFilial()" title="Grava alterações na tabela: FILIAIS">
             <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
             <span id="txtBtnSalvarFilial">Gravar Cadastro da Filial no Banco</span>
             <div id="spinSalvarFilial" class="spinner" style="display: none;"></div>
@@ -2719,7 +2719,7 @@
         <div class="selection-counter">
             Configuração Fiscal: <b style="color: #10b981;" id="lblActionNfeFilialNum">Filial 2</b>
         </div>
-        <button class="btn btn-success" id="btnSalvarNfe" onclick="salvarConfigNfe()">
+        <button class="btn btn-success" id="btnSalvarNfe" onclick="salvarConfigNfe()" title="Grava alterações na tabela: NFECONFIGURACAOFILIAIS">
             <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
             <span id="txtBtnSalvarNfe">Gravar NF-e & Certificado no Banco</span>
             <div id="spinSalvarNfe" class="spinner" style="display: none;"></div>
@@ -2731,7 +2731,7 @@
         <div class="selection-counter">
             Configurando SD Sentinela para <b style="color: #38bdf8;" id="lblActionSentinelaFilial">Filial 2</b>
         </div>
-        <button class="btn btn-primary" id="btnSalvarSentinela" onclick="salvarConfigSentinela()" style="background: linear-gradient(135deg, #0ea5e9, #2563eb); border-color: #0ea5e9;">
+        <button class="btn btn-primary" id="btnSalvarSentinela" onclick="salvarConfigSentinela()" style="background: linear-gradient(135deg, #0ea5e9, #2563eb); border-color: #0ea5e9;" title="Grava alterações nas tabelas: SENTINELAS, SENTINELASFILIAIS e SENTINELASFTPFILIAIS">
             <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
             <span id="txtBtnSalvarSentinela">Aplicar Configurações no SD Sentinela</span>
             <div id="spinSalvarSentinela" class="spinner" style="display: none;"></div>
@@ -2750,7 +2750,7 @@
             </div>
             <div class="modal-footer" id="modalFooter">
                 <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
-                <button class="btn btn-success" id="btnConfirmExecute" onclick="runExecute()">
+                <button class="btn btn-success" id="btnConfirmExecute" onclick="runExecute()" title="Grava as alterações nas tabelas: PERMISSOES, WFILIAISPDVS, ANTPROMOCOES, FILIAIS, USUARIOS, CONTROLE">
                     Confirmar e Gravar no Banco
                 </button>
             </div>
@@ -2772,7 +2772,7 @@
             </div>
             <div id="modalRegFooter" class="modal-footer" style="display: flex; justify-content: flex-end; gap: 12px;">
                 <button type="button" class="btn btn-secondary" onclick="closeRegistryModal(true)">Não, Configurar Manualmente</button>
-                <button type="button" class="btn btn-primary" id="btnConfirmRegistry" onclick="applyDetectedRegistry()">Sim, Conectar Agora</button>
+                <button type="button" class="btn btn-primary" id="btnConfirmRegistry" onclick="applyDetectedRegistry()" title="Conectar ao banco configurado em HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\SDSuper">Sim, Conectar Agora</button>
             </div>
         </div>
     </div>
@@ -3337,18 +3337,22 @@
 
             content.innerHTML = `
                 <p style="font-size: 14px; margin-bottom: 12px; color: #fff;">
-                    Identificamos o banco de dados configurado no <b>Registro do Windows</b> (<code>HKEY_LOCAL_MACHINE\\...\\SDSuper</code>):
+                    Identificamos o banco de dados configurado no <b>Registro do Windows</b>:
                 </p>
                 <div style="background: rgba(0, 210, 255, 0.08); border: 1px solid rgba(0, 210, 255, 0.25); border-radius: var(--radius-md); padding: 14px; margin-bottom: 14px; font-size: 13px;">
                     <div style="margin-bottom: 8px;"><b>Ambiente:</b> ${tipoBadge}</div>
-                    <div style="margin-bottom: 6px;"><b>IP / Servidor (BDIPServidor):</b> <code style="color: var(--accent-cyan); font-size: 14px; font-weight: 600;">${data.ip}</code></div>
-                    <div style="margin-bottom: 6px;"><b>Caminho do Banco (.FDB):</b> <code>${data.db_path}</code> (Porta: ${data.port})</div>
+                    <div style="margin-bottom: 6px;"><b>IP / Servidor:</b> <span style="color: var(--accent-cyan); font-size: 14px; font-weight: 600;">${data.ip}</span></div>
+                    <div style="margin-bottom: 6px;"><b>Caminho do Banco:</b> <span>${data.db_path}</span> (Porta: ${data.port})</div>
                     ${data.cnpj ? `<div><b>CNPJ da Loja:</b> <span style="color: #fff; font-family: 'JetBrains Mono', monospace;">${data.cnpj}</span></div>` : ''}
                 </div>
                 <p style="font-size: 13px; color: var(--text-secondary);">
                     Deseja prosseguir com o utilitário e conectar automaticamente por este endereço?
                 </p>
             `;
+            const btnConfirmReg = document.getElementById('btnConfirmRegistry');
+            if (btnConfirmReg) {
+                btnConfirmReg.title = `Conectar ao banco configurado em ${data.registry_key || 'HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\SDSuper'}`;
+            }
             modal.style.display = 'flex';
         }
 
@@ -3981,18 +3985,18 @@
 
             let actionsEtapa1 = [];
             if (optPerms) actionsEtapa1.push(`<li><b>Replicar Permissões SDSuper:</b> Clona permissões da Filial ${orig} para Filial ${dest}.</li>`);
-            if (optPdvs) actionsEtapa1.push(`<li><b>Adicionar Filial nos PDVs:</b> Acrescenta Filial ${dest} em <code>WFILIAISPDVS</code> <u>apenas para quem tem permissões de PDV ativas</u>.</li>`);
+            if (optPdvs) actionsEtapa1.push(`<li><b>Adicionar Filial nos PDVs:</b> Acrescenta Filial ${dest} nos caixas <u>apenas para quem tem permissões de PDV ativas</u>.</li>`);
             if (optNfePadrao) actionsEtapa1.push(`<li><b style="color: #34d399;">Inicializar Configuração NF-e Padrão (Série 0, Número 0):</b> Prepara parâmetros fiscais e TecnoSpeed para a Filial ${dest}.</li>`);
-            if (optPromosAtivas) actionsEtapa1.push(`<li><b style="color: var(--accent-cyan);">Incluir Nova Filial nas Promoções Ativas:</b> Acrescenta Filial ${dest} em <code>ANTPROMOCOES.WFILIAIS</code> e marca <code>WFIL${dest} = 'S'</code> em todos os produtos vigentes no banco.</li>`);
+            if (optPromosAtivas) actionsEtapa1.push(`<li><b style="color: var(--accent-cyan);">Incluir Nova Filial nas Promoções Ativas:</b> Habilita a Filial ${dest} em todas as promoções vigentes no banco.</li>`);
 
             let actionsEtapa2 = [];
-            if (optGenPadrao) actionsEtapa2.push(`<li><b style="color: #fbbf24;">Alterar ID Padrão do Sistema (GENIDFILIALPADRAO):</b> Define o generator padrão para <u>${getFilialName(targetGenFilial)}</u>.</li>`);
+            if (optGenPadrao) actionsEtapa2.push(`<li><b style="color: #fbbf24;">Alterar ID Padrão do Sistema:</b> Define a filial padrão para <u>${getFilialName(targetGenFilial)}</u>.</li>`);
             const optPreservarOutras = document.getElementById('chkPreservarOutras')?.checked ?? true;
-            if (optFilialAcesso) actionsEtapa2.push(`<li><b style="color: #00d2ff;">Mudar Filial de Login/Acesso (WIDFILIALTRABALHO):</b> Direciona login para <u>${getFilialName(targetAcessoFilial)}</u> ${optPreservarOutras ? '<span style="color: #34d399;">(Preservando quem opera em outra filial)</span>' : ''}.</li>`);
-            if (optWidProd) actionsEtapa2.push(`<li><b style="color: #fbbf24;">Alterar Filial Cadastro Produtos (CONTROLE.WIDFILIALPRODUTOS):</b> Vincula cadastro de produtos para <u>${getFilialName(targetProdFilial)}</u>.</li>`);
-            if (optSyncVersao) actionsEtapa2.push(`<li><b style="color: #34d399;">Sincronizar Versão do Banco (FILIAISCONTROLE.WVERSAOBANCO):</b> Atualiza a versão do banco para <u>${getFilialName(targetVersaoFilial)}</u>.</li>`);
-            if (optFilialPrecosPromo) actionsEtapa2.push(`<li><b style="color: #fbbf24;">Mudar Filial de Preços da Promoção (FilialPrecosPromocao):</b> Define <u>${getFilialName(targetPrecosPromoFilial)}</u> como referência de custos/preços no Registro do Windows e em <code>FILIAIS.WIDFILIALPRECOS</code>.</li>`);
-            if (optFilialCadastro) actionsEtapa2.push(`<li><b style="color: #cbd5e1;">Alterar Filial Cadastro Base (WIDFILIAL):</b> Atualiza cadastro base de ${selected.length} usuário(s) para <u>${getFilialName(targetCadastroFilial)}</u>.</li>`);
+            if (optFilialAcesso) actionsEtapa2.push(`<li><b style="color: #00d2ff;">Mudar Filial de Login/Acesso:</b> Direciona login para <u>${getFilialName(targetAcessoFilial)}</u> ${optPreservarOutras ? '<span style="color: #34d399;">(Preservando quem opera em outra filial)</span>' : ''}.</li>`);
+            if (optWidProd) actionsEtapa2.push(`<li><b style="color: #fbbf24;">Alterar Filial Cadastro Produtos:</b> Vincula cadastro de produtos para <u>${getFilialName(targetProdFilial)}</u>.</li>`);
+            if (optSyncVersao) actionsEtapa2.push(`<li><b style="color: #34d399;">Sincronizar Versão do Banco:</b> Atualiza a versão do banco para <u>${getFilialName(targetVersaoFilial)}</u>.</li>`);
+            if (optFilialPrecosPromo) actionsEtapa2.push(`<li><b style="color: #fbbf24;">Mudar Filial de Preços da Promoção:</b> Define <u>${getFilialName(targetPrecosPromoFilial)}</u> como referência de custos/preços no sistema.</li>`);
+            if (optFilialCadastro) actionsEtapa2.push(`<li><b style="color: #cbd5e1;">Alterar Filial Cadastro Base:</b> Atualiza cadastro base de ${selected.length} usuário(s) para <u>${getFilialName(targetCadastroFilial)}</u>.</li>`);
 
             const isViradaOficial = (actionsEtapa2.length > 0);
 
