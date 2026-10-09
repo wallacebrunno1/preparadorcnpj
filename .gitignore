@@ -1,0 +1,33 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.bak
+*.tmp
+*.log
+
+# Build & Dist
+build/
+dist/
+
+# IDE & OS
+.vscode/
+.idea/
+desktop.ini
+
+# Backups & local scratch audits
+*.stitch_backup.*
+check_*.py
+audit_*.py
+search_*.py
+extract_*.py
+dump_*.py
+scan_*.py
+find_*.py
+deep_diff_*.py
+detailed_diff.py
+cdp_inspect.py
+update_cdp.py
+inspect_dom.py
+snapshot_promo_before.json
+historico_atendimentos.json
