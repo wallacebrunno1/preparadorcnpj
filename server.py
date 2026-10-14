@@ -25,7 +25,7 @@ try:
 except ImportError:
     HAS_CRYPTOGRAPHY = False
 
-PORT = 8089
+PORT = int(os.environ.get("PORT", 8089))
 
 class FirebirdManager:
     @staticmethod
