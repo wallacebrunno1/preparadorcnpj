@@ -730,6 +730,57 @@ class FirebirdManager:
         return ip
 
     @staticmethod
+    def get_database_ip(config=None):
+        """
+        Retorna o IP do Servidor do Banco de Dados para onde os PDVs devem se conectar.
+        - Se o banco está numa VM Linux ou servidor na rede (ex: 10.0.0.112), retorna esse IP.
+        - Se o host for localhost / 127.0.0.1 ou vazio, o banco está local no Windows:
+          Nesse caso, os PDVs precisam do IP de rede (LAN) desta máquina (FirebirdManager.get_local_ip()).
+        - Se houver IP no Registro do Windows (ex: VM Linux), utiliza-o se host for localhost.
+        """
+        host = None
+        if config and isinstance(config, dict):
+            host = config.get('host')
+
+        if not host or not str(host).strip():
+            try:
+                reg = FirebirdManager.detect_registry()
+                if reg and reg.get('found') and reg.get('raw_ip'):
+                    host = reg.get('raw_ip')
+            except Exception:
+                pass
+
+        host_str = str(host or '').strip()
+
+        # Se for localhost ou 127.0.0.1 ou vazio
+        if not host_str or host_str.lower() in ('localhost', '127.0.0.1', '::1', '0.0.0.0'):
+            # Verifica se no Registro do Windows tem um IP de servidor específico (ex: VM Linux)
+            try:
+                reg = FirebirdManager.detect_registry()
+                if reg and reg.get('found') and reg.get('raw_ip'):
+                    reg_raw = str(reg.get('raw_ip')).strip()
+                    if reg_raw and reg_raw.lower() not in ('localhost', '127.0.0.1', '::1', '0.0.0.0'):
+                        return reg_raw
+            except Exception:
+                pass
+            return FirebirdManager.get_local_ip()
+
+        # Se já for formato IPv4 numérico (ex: 10.0.0.112)
+        if re.match(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$', host_str):
+            return host_str
+
+        # Se for um hostname/DDNS (ex: precobaixogo.ddns.com.br), tenta resolver para IP numérico
+        try:
+            resolved = socket.gethostbyname(host_str)
+            if resolved and resolved not in ('127.0.0.1', '0.0.0.0'):
+                return resolved
+        except Exception:
+            pass
+
+        return host_str
+
+
+    @staticmethod
     def format_cep(cep_raw):
         if not cep_raw:
             return ""
@@ -971,7 +1022,10 @@ class FirebirdManager:
             })
             
         local_ip = FirebirdManager.get_local_ip()
-        suggested_terminal = f"\\\\{local_ip}\\SDPROGS$\\SDTERMINAL\\"
+        db_ip = FirebirdManager.get_database_ip(config)
+        suggested_terminal = f"\\\\{db_ip}\\SDPROGS$\\SDTERMINAL\\"
+        suggested_ippdv = db_ip
+        is_linux_db = bool(str(config.get('db_path', '')).startswith('/') or (FirebirdManager.detect_registry().get('is_linux', False)))
 
         # 2. Dados da filial solicitada
         cur.execute("""
@@ -1045,8 +1099,13 @@ class FirebirdManager:
                 "filiais_list": filiais_list,
                 "contador_filial_1": contador_filial_1,
                 "local_ip": local_ip,
+                "database_ip": db_ip,
+                "is_linux": is_linux_db,
                 "suggested_terminal": suggested_terminal,
-                "suggested_ippdv": local_ip,
+                "suggested_ippdv": suggested_ippdv,
+                "ip_pdv": suggested_ippdv,
+                "caminho_terminal": suggested_terminal,
+                "ip_pdv_divergent": False,
                 "filial_precos": 1,
                 "filial_estoque": 1,
                 "filial_nfe": filial_id,
@@ -1057,6 +1116,14 @@ class FirebirdManager:
                 "filial_comanda": 1,
                 "filial_carga": filial_id
             }
+
+        raw_caminho = (row[36] or '').strip()
+        raw_ip_pdv = (row[37] or '').strip()
+        
+        # Se ip_pdv estiver vazio ou for 127.0.0.1 / localhost, usa db_ip
+        effective_ip_pdv = raw_ip_pdv if (raw_ip_pdv and raw_ip_pdv.lower() not in ('127.0.0.1', 'localhost', '::1', '0.0.0.0')) else db_ip
+        effective_caminho = raw_caminho if raw_caminho else suggested_terminal
+        ip_pdv_divergent = bool(raw_ip_pdv and raw_ip_pdv != db_ip)
 
         return {
             "success": True,
@@ -1097,8 +1164,10 @@ class FirebirdManager:
             "filial_etiq": row[33] if row[33] is not None else 1,
             "filial_comanda": row[34] if row[34] is not None else 1,
             "filial_carga": row[35] if row[35] is not None else row[0],
-            "caminho_terminal": ((row[36] or '').strip() or suggested_terminal).upper(),
-            "ip_pdv": (row[37] or '').strip() or local_ip,
+            "caminho_terminal": effective_caminho.upper(),
+            "ip_pdv": effective_ip_pdv,
+            "raw_ip_pdv": raw_ip_pdv,
+            "ip_pdv_divergent": ip_pdv_divergent,
             "cidade_nome": (row[38] or '').strip().upper(),
             "cidade_uf": (row[39] or '').strip().upper(),
             "cidade_ibge": row[40],
@@ -1110,8 +1179,10 @@ class FirebirdManager:
             "contador_filial_1": contador_filial_1,
             "filiais_list": filiais_list,
             "local_ip": local_ip,
+            "database_ip": db_ip,
+            "is_linux": is_linux_db,
             "suggested_terminal": suggested_terminal,
-            "suggested_ippdv": local_ip
+            "suggested_ippdv": suggested_ippdv
         }
 
     @staticmethod
@@ -1178,8 +1249,16 @@ class FirebirdManager:
                 id_bairro_cont = FirebirdManager.resolve_or_create_bairro(cur, str(bairro_cont_nome or '').upper())
 
             local_ip = FirebirdManager.get_local_ip()
-            caminho_terminal = payload.get('caminho_terminal') or f"\\\\{local_ip}\\SDPROGS$\\SDTERMINAL\\"
-            ip_pdv = payload.get('ip_pdv') or local_ip
+            db_ip = FirebirdManager.get_database_ip(config)
+            
+            caminho_terminal = (payload.get('caminho_terminal') or '').strip()
+            if not caminho_terminal:
+                caminho_terminal = f"\\\\{db_ip}\\SDPROGS$\\SDTERMINAL\\"
+                
+            ip_pdv = (payload.get('ip_pdv') or '').strip()
+            # Se vier vazio, localhost/127.0.0.1, ou se foi solicitado alinhamento automático com o banco
+            if not ip_pdv or ip_pdv.lower() in ('127.0.0.1', 'localhost', '::1', '0.0.0.0') or payload.get('auto_align_db_ip'):
+                ip_pdv = db_ip
             
             cur.execute("SELECT COUNT(*) FROM FILIAIS WHERE WIDFILIAL = ?", (filial_id,))
             exists = (cur.fetchone()[0] > 0)
@@ -1299,7 +1378,8 @@ class FirebirdManager:
                 "id_cidade": id_cidade,
                 "id_bairro": id_bairro,
                 "caminho_terminal": caminho_terminal,
-                "ip_pdv": ip_pdv
+                "ip_pdv": ip_pdv,
+                "database_ip": db_ip
             }
         except Exception as e:
             try:
@@ -2234,7 +2314,14 @@ class AppHandler(http.server.SimpleHTTPRequestHandler):
             return
         elif self.path == '/api/local-info':
             ip = FirebirdManager.get_local_ip()
-            self.send_json({"success": True, "local_ip": ip, "suggested_terminal": f"\\\\{ip}\\SDPROGS$\\SDTERMINAL\\"})
+            db_ip = FirebirdManager.get_database_ip()
+            self.send_json({
+                "success": True,
+                "local_ip": ip,
+                "database_ip": db_ip,
+                "suggested_terminal": f"\\\\{db_ip}\\SDPROGS$\\SDTERMINAL\\",
+                "suggested_ippdv": db_ip
+            })
             return
         elif self.path.startswith('/static/'):
             return super().do_GET()
@@ -2329,6 +2416,21 @@ class AppHandler(http.server.SimpleHTTPRequestHandler):
             cnpj = data.get('cnpj', '')
             res = FirebirdManager.consult_cnpj_api(cnpj)
             self.send_json(res)
+            return
+
+        elif self.path == '/api/database-info':
+            config = data.get('config', {})
+            db_ip = FirebirdManager.get_database_ip(config)
+            local_ip = FirebirdManager.get_local_ip()
+            is_linux = bool(str(config.get('db_path', '')).startswith('/') or (FirebirdManager.detect_registry().get('is_linux', False)))
+            self.send_json({
+                "success": True,
+                "database_ip": db_ip,
+                "local_ip": local_ip,
+                "is_linux": is_linux,
+                "suggested_terminal": f"\\\\{db_ip}\\SDPROGS$\\SDTERMINAL\\",
+                "suggested_ippdv": db_ip
+            })
             return
 
         elif self.path == '/api/filial-details':

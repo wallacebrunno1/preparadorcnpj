@@ -2001,48 +2001,92 @@
                 </div>
             </div>
 
-            <!-- Bloco 5: Rede e Terminal (Servidor Windows) -->
+            <!-- Bloco 5: Servidor & Conexão dos PDVs (Aba Vendas no SDSuper) -->
             <div class="card" style="margin-bottom: 22px; border-color: rgba(58, 134, 255, 0.4);">
                 <div class="block-header">
                     <div class="block-title">
                         <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                        Bloco 5: Rede e Terminal (Servidor Windows)
+                        Bloco 5: Servidor & Conexão dos PDVs (Aba Vendas no SDSuper)
                     </div>
-                    <span class="badge badge-pending" style="font-size: 11px;">Passo 5 - Windows Server</span>
+                    <span class="badge badge-success" style="font-size: 11px;">Aba Vendas: Servidor / WIPPDV</span>
                 </div>
 
-                <!-- Callout do IP Local do Windows Server -->
+                <!-- Callout do IP do Servidor do Banco de Dados -->
                 <div style="background: rgba(58, 134, 255, 0.08); border: 1px solid rgba(58, 134, 255, 0.3); border-radius: var(--radius-md); padding: 14px 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
                     <div>
-                        <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: #60a5fa; margin-bottom: 4px;">
-                            🖥️ IP Desta Máquina (Servidor Windows):
+                        <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: #60a5fa; margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
+                            <span>🌐 IP do Servidor do Banco de Dados (Para os PDVs):</span>
+                            <span id="badgeEnvType" class="badge badge-success" style="font-size: 10px;">🐧 Servidor Linux</span>
                         </div>
-                        <div style="font-size: 16px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: #fff;">
-                            <span id="lblLocalIpDisplay">10.0.0.112</span>
+                        <div style="font-size: 18px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: #fff; display: flex; align-items: center; gap: 10px;">
+                            <span id="lblDatabaseIpDisplay">10.0.0.112</span>
+                            <span id="lblLocalIpSubtext" style="font-size: 11px; font-weight: 400; color: var(--text-secondary);">(IP Local Windows: <span id="lblLocalIpDisplay">10.0.0.112</span>)</span>
                         </div>
-                        <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">
-                            O caminho do Passo 5 no SDSuper deve apontar para o compartilhamento desta máquina na rede.
+                        <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+                            📌 No SDSuper (tela <i>Alterar Filial</i> &gt; aba <i>Vendas</i> &gt; campo <b>Servidor:</b>), este é o IP que diz aos PDVs onde se conectar no banco. <b>Ele sempre precisa ser o IP do Banco de Dados</b>, seja Linux ou Windows.
                         </div>
                     </div>
-                    <div style="display: flex; gap: 8px;">
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                         <button type="button" class="btn btn-secondary" style="padding: 8px 14px; font-size: 12px;" onclick="redetectarIpLocal()">
-                            ⚡ Redetectar IP Local
+                            ⚡ Redetectar
                         </button>
-                        <button type="button" class="btn btn-secondary" style="padding: 8px 14px; font-size: 12px; border-color: rgba(0, 210, 255, 0.4); color: #00d2ff;" onclick="preencherCaminhoTerminalPadrao()">
-                            ✨ Preencher Padrão Servidor
+                        <button type="button" class="btn btn-secondary" style="padding: 8px 14px; font-size: 12px; border-color: rgba(0, 210, 255, 0.4); color: #00d2ff;" onclick="preencherCaminhoTerminalPadrao(true)">
+                            ✨ Alinhar com IP do Banco
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Banner Dinâmico de Sugestão/Divergência de IP -->
+                <div id="alertIpDivergentBanner" style="display: none; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.45); border-radius: var(--radius-md); padding: 12px 16px; margin-bottom: 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <div style="display: flex; align-items: flex-start; gap: 10px;">
+                            <span style="font-size: 20px;">⚠️</span>
+                            <div>
+                                <div style="font-size: 13px; font-weight: 700; color: #fbbf24;">
+                                    Atenção: O IP configurado na Filial está diferente do IP do Banco de Dados!
+                                </div>
+                                <div style="font-size: 12px; color: #f3f4f6; margin-top: 2px;">
+                                    Campo Servidor atual: <b id="lblCurrentDivergentIp" style="color: #fbbf24; font-family: monospace;">192.168.18.42</b> &nbsp;|&nbsp;
+                                    IP do Banco Conectado: <b id="lblTargetDbIp" style="color: #34d399; font-family: monospace;">10.0.0.112</b>
+                                    <div style="margin-top: 2px; font-size: 11px; color: #d1d5db;">
+                                        Se os PDVs estiverem apontando para um IP antigo ou incorreto, eles não conseguirão se conectar ao banco de dados.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-primary" style="padding: 6px 14px; font-size: 12px; background: linear-gradient(135deg, #f59e0b, #d97706); border: none;" onclick="aplicarIpBancoSugerido()">
+                            🔄 Atualizar para <span id="btnDbIpTarget">10.0.0.112</span> Agora
                         </button>
                     </div>
                 </div>
 
                 <div class="form-row">
-                    <div class="form-group" style="flex: 3;">
-                        <label title="Coluna no banco: WCAMINHOSDTERMINAL">Caminho SDTerminal da Rede</label>
+                    <div class="form-group" style="flex: 2.5;">
+                        <label title="Coluna no banco: WIPPDV (SDSuper: Aba Vendas -> Campo 'Servidor:')">
+                            🖥️ Servidor do Banco / PDVs (Aba Vendas &gt; Servidor: - WIPPDV)
+                            <span id="badgeIpPdvStatus" class="badge badge-success" style="margin-left: 8px; font-size: 10px;">Alinhado com Banco</span>
+                        </label>
+                        <input type="text" id="txtFilialIpPdv" class="form-control" maxlength="20" placeholder="10.0.0.112" oninput="checkIpPdvAlignment()">
+                        <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">
+                            IP gravado na coluna <b>WIPPDV</b>. É o endereço que todos os caixas usam para abrir a conexão com o banco.
+                        </div>
+                    </div>
+                    <div class="form-group" style="flex: 3.5;">
+                        <label title="Coluna no banco: WCAMINHOSDTERMINAL (SDSuper: Aba Vendas -> Campo 'Caminho Terminal:')">
+                            📁 Caminho SDTerminal da Rede (Aba Vendas &gt; Caminho Terminal: - WCAMINHOSDTERMINAL)
+                        </label>
                         <input type="text" id="txtFilialCaminhoTerminal" class="form-control" maxlength="200" placeholder="\\10.0.0.112\SDPROGS$\SDTERMINAL\">
+                        <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">
+                            Compartilhamento da pasta SDTerminal na rede para os PDVs atualizarem executáveis e tabelas.
+                        </div>
                     </div>
-                    <div class="form-group" style="flex: 1.5;">
-                        <label title="Coluna no banco: WIPPDV">IP Concentrador / PDV</label>
-                        <input type="text" id="txtFilialIpPdv" class="form-control" maxlength="20" placeholder="10.0.0.112">
-                    </div>
+                </div>
+
+                <div style="margin-top: 8px; display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="chkAutoAlignDbIp" checked style="width: 16px; height: 16px; cursor: pointer;">
+                    <label for="chkAutoAlignDbIp" style="font-size: 12px; color: var(--text-secondary); cursor: pointer; margin-bottom: 0;">
+                        Sempre manter o campo <b>Servidor (WIPPDV)</b> alinhado com o IP do Banco de Dados ao salvar filial (Recomendado)
+                    </label>
                 </div>
             </div>
 
@@ -3315,6 +3359,7 @@
         let allFiliais = [];
         let currentFilter = 'ALL';
         let detectedRegistryData = null;
+        let currentDatabaseIp = '127.0.0.1';
 
         async function checkRegistryAutoDetect(isManualClick = false) {
             try {
@@ -3376,6 +3421,11 @@
             document.getElementById('cfgHost').value = data.ip;
             document.getElementById('cfgPort').value = data.port || 3050;
             document.getElementById('cfgDbPath').value = data.db_path;
+            if (data.ip && data.ip !== '127.0.0.1' && data.ip !== 'localhost') {
+                currentDatabaseIp = data.ip;
+                const dbDisp = document.getElementById('lblDatabaseIpDisplay');
+                if (dbDisp) dbDisp.innerText = currentDatabaseIp;
+            }
             
             saveConfigCache();
             closeRegistryModal();
@@ -3399,7 +3449,8 @@
 
         function applyPreset(type) {
             if (type === 'VMLINUX') {
-                document.getElementById('cfgHost').value = '127.0.0.1';
+                const regIp = (detectedRegistryData && detectedRegistryData.raw_ip && detectedRegistryData.raw_ip.toUpperCase() !== 'LOCALHOST' && detectedRegistryData.raw_ip !== '127.0.0.1') ? detectedRegistryData.raw_ip : '127.0.0.1';
+                document.getElementById('cfgHost').value = regIp;
                 document.getElementById('cfgPort').value = '3050';
                 document.getElementById('cfgDbPath').value = '/SDSuper/Dados/SDSuper.fdb';
                 document.getElementById('cfgUser').value = 'SYSDBA';
@@ -3512,6 +3563,12 @@
 
                 document.getElementById('connStatusBadge').className = 'status-badge';
                 document.getElementById('connStatusText').innerText = `Conectado (${getConfig().host})`;
+                const cfgHost = getConfig().host;
+                if (cfgHost && cfgHost !== '127.0.0.1' && cfgHost !== 'localhost') {
+                    currentDatabaseIp = cfgHost;
+                    const dbDisp = document.getElementById('lblDatabaseIpDisplay');
+                    if (dbDisp) dbDisp.innerText = currentDatabaseIp;
+                }
 
                 updateStats();
                 renderTable();
@@ -4285,9 +4342,25 @@
                     cachedContadorFilial1 = data.contador_filial_1;
                 }
 
-                // IP Local do Servidor Windows e Caminho SDTerminal
+                // IP do Banco e IP Local
+                if (data.database_ip) {
+                    currentDatabaseIp = data.database_ip;
+                    const dbDisp = document.getElementById('lblDatabaseIpDisplay');
+                    if (dbDisp) dbDisp.innerText = data.database_ip;
+                }
                 if (data.local_ip) {
-                    document.getElementById('lblLocalIpDisplay').innerText = data.local_ip;
+                    const locDisp = document.getElementById('lblLocalIpDisplay');
+                    if (locDisp) locDisp.innerText = data.local_ip;
+                }
+                const envBadge = document.getElementById('badgeEnvType');
+                if (envBadge) {
+                    if (data.is_linux) {
+                        envBadge.className = 'badge badge-success';
+                        envBadge.innerHTML = '🐧 Servidor Linux (VM)';
+                    } else {
+                        envBadge.className = 'badge badge-warning';
+                        envBadge.innerHTML = '🪟 Servidor Windows';
+                    }
                 }
 
                 // Preencher campos
@@ -4444,9 +4517,21 @@
             setSelectSafe('selFilialEtiq', d.filial_etiq);
             setSelectSafe('selFilialComanda', d.filial_comanda);
 
-            // Bloco 5: Rede e Terminal (Passo 5 - Windows Server)
-            document.getElementById('txtFilialCaminhoTerminal').value = (d.caminho_terminal || d.suggested_terminal || '').toUpperCase();
-            document.getElementById('txtFilialIpPdv').value = d.ip_pdv || d.suggested_ippdv || '';
+            // Bloco 5: Servidor & Conexão dos PDVs (Aba Vendas no SDSuper: Servidor / WIPPDV)
+            if (d.database_ip) {
+                currentDatabaseIp = d.database_ip;
+                const dbDisp = document.getElementById('lblDatabaseIpDisplay');
+                if (dbDisp) dbDisp.innerText = d.database_ip;
+            }
+            const dbIp = currentDatabaseIp || getConfig().host || '127.0.0.1';
+            const rawIp = (d.ip_pdv || d.suggested_ippdv || '').trim();
+            const targetIp = (rawIp && rawIp !== '127.0.0.1' && rawIp !== 'localhost') ? rawIp : dbIp;
+            document.getElementById('txtFilialIpPdv').value = targetIp;
+
+            const defaultTerminal = ('\\\\' + (rawIp || dbIp) + '\\SDPROGS$\\SDTERMINAL\\').toUpperCase();
+            document.getElementById('txtFilialCaminhoTerminal').value = (d.caminho_terminal || d.suggested_terminal || defaultTerminal).toUpperCase();
+
+            checkIpPdvAlignment();
         }
 
         function setSelectSafe(id, val) {
@@ -4468,6 +4553,7 @@
             const maxId = cachedFiliaisList.reduce((m, f) => Math.max(m, f.id), 0);
             const nextId = (maxId || 1) + 1;
             currentFilialConfigId = nextId;
+            const dbIp = currentDatabaseIp || getConfig().host || '127.0.0.1';
 
             // Limpar formulário com padrões
             fillFilialForm({
@@ -4482,13 +4568,49 @@
                 filial_movimento: nextId,
                 filial_etiq: 1,
                 filial_comanda: 1,
-                caminho_terminal: '\\\\' + (document.getElementById('lblLocalIpDisplay')?.innerText?.trim() || '127.0.0.1') + '\\SDPROGS$\\SDTERMINAL\\',
-                ip_pdv: document.getElementById('lblLocalIpDisplay')?.innerText?.trim() || '127.0.0.1'
+                database_ip: dbIp,
+                caminho_terminal: ('\\\\' + dbIp + '\\SDPROGS$\\SDTERMINAL\\').toUpperCase(),
+                ip_pdv: dbIp
             });
 
             populateFilialConfigSelects(cachedFiliaisList, nextId);
             document.getElementById('lblActionFilialNum').innerText = `Nova Filial ${nextId}`;
             alert(`Preparando rascunho para criação da Filial ${nextId}. Preencha o CNPJ para buscar os dados automaticamente.`);
+        }
+
+        function checkIpPdvAlignment() {
+            const currentVal = document.getElementById('txtFilialIpPdv')?.value?.trim();
+            const banner = document.getElementById('alertIpDivergentBanner');
+            const badgeStatus = document.getElementById('badgeIpPdvStatus');
+            const dbIp = currentDatabaseIp || getConfig().host || '127.0.0.1';
+
+            const lblTarget = document.getElementById('lblTargetDbIp');
+            const lblCur = document.getElementById('lblCurrentDivergentIp');
+            const btnTarget = document.getElementById('btnDbIpTarget');
+            if (lblTarget) lblTarget.innerText = dbIp;
+            if (lblCur) lblCur.innerText = currentVal || '(Vazio)';
+            if (btnTarget) btnTarget.innerText = dbIp;
+
+            if (currentVal && currentVal !== dbIp) {
+                if (banner) banner.style.display = 'block';
+                if (badgeStatus) {
+                    badgeStatus.className = 'badge badge-warning';
+                    badgeStatus.innerText = `⚠️ Divergente do Banco (${dbIp})`;
+                }
+            } else {
+                if (banner) banner.style.display = 'none';
+                if (badgeStatus) {
+                    badgeStatus.className = 'badge badge-success';
+                    badgeStatus.innerText = '✅ Alinhado com Banco';
+                }
+            }
+        }
+
+        function aplicarIpBancoSugerido() {
+            const dbIp = currentDatabaseIp || getConfig().host || '127.0.0.1';
+            highlightAndSet('txtFilialIpPdv', dbIp);
+            highlightAndSet('txtFilialCaminhoTerminal', ('\\\\' + dbIp + '\\SDPROGS$\\SDTERMINAL\\').toUpperCase());
+            checkIpPdvAlignment();
         }
 
         // ==========================================
@@ -4749,20 +4871,29 @@
             try {
                 const res = await apiFetch('/api/local-info');
                 const d = await res.json();
-                if (d.success && d.local_ip) {
-                    document.getElementById('lblLocalIpDisplay').innerText = d.local_ip;
-                    preencherCaminhoTerminalPadrao();
-                    alert(`✅ IP Local redetectado: ${d.local_ip}`);
+                if (d.success) {
+                    if (d.local_ip) {
+                        document.getElementById('lblLocalIpDisplay').innerText = d.local_ip;
+                    }
+                    if (d.database_ip) {
+                        currentDatabaseIp = d.database_ip;
+                        const dbDisp = document.getElementById('lblDatabaseIpDisplay');
+                        if (dbDisp) dbDisp.innerText = d.database_ip;
+                    }
+                    preencherCaminhoTerminalPadrao(true);
+                    alert(`✅ IP do Servidor redetectado: ${currentDatabaseIp}`);
                 }
             } catch (err) {
                 alert('Erro ao detectar IP local: ' + err.message);
             }
         }
 
-        function preencherCaminhoTerminalPadrao() {
-            const ip = document.getElementById('lblLocalIpDisplay')?.innerText?.trim() || '127.0.0.1';
+        function preencherCaminhoTerminalPadrao(useDbIp = true) {
+            const dbIp = currentDatabaseIp || getConfig().host || document.getElementById('lblDatabaseIpDisplay')?.innerText?.trim() || '127.0.0.1';
+            const ip = useDbIp ? dbIp : (document.getElementById('lblLocalIpDisplay')?.innerText?.trim() || '127.0.0.1');
             highlightAndSet('txtFilialCaminhoTerminal', ('\\\\' + ip + '\\SDPROGS$\\SDTERMINAL\\').toUpperCase());
             highlightAndSet('txtFilialIpPdv', ip);
+            checkIpPdvAlignment();
         }
 
         async function salvarDadosFilial() {
@@ -4803,6 +4934,20 @@
                     return;
                 }
                 filialCidId = resCid.id;
+            }
+
+            // Validação e sugestão de alinhamento com IP do Banco de Dados
+            let ipPdv = document.getElementById('txtFilialIpPdv').value.trim();
+            const dbIp = currentDatabaseIp || getConfig().host || '127.0.0.1';
+            const autoAlign = document.getElementById('chkAutoAlignDbIp') ? document.getElementById('chkAutoAlignDbIp').checked : true;
+
+            if (autoAlign && ipPdv !== dbIp) {
+                if (confirm(`⚠️ ALINHAMENTO DO IP DO SERVIDOR / PDVs (Aba Vendas):\n\nO IP preenchido no campo Servidor é "${ipPdv || 'vazio'}", mas o IP do Banco de Dados conectado é "${dbIp}".\n\nNo SDSuper (Aba Vendas -> Servidor: / WIPPDV), este é o IP que diz para todos os PDVs onde se conectar no banco de dados Firebird.\n\nDeseja alterar para o IP do Banco (${dbIp}) antes de salvar?\n\n[OK] Sim, alterar para ${dbIp} (Recomendado)\n[Cancelar] Manter "${ipPdv}"`)) {
+                    ipPdv = dbIp;
+                    document.getElementById('txtFilialIpPdv').value = dbIp;
+                    document.getElementById('txtFilialCaminhoTerminal').value = ('\\\\' + dbIp + '\\SDPROGS$\\SDTERMINAL\\').toUpperCase();
+                    checkIpPdvAlignment();
+                }
             }
 
             if (!confirm(`Confirma a gravação dos dados e cadastro da Filial ${fid} (${razao}) diretamente no banco de dados Firebird?`)) {
@@ -4853,7 +4998,8 @@
                 filial_comanda: parseInt(document.getElementById('selFilialComanda').value) || fid,
                 filial_carga: parseInt(document.getElementById('selFilialCarga').value) || fid,
                 caminho_terminal: document.getElementById('txtFilialCaminhoTerminal').value.trim().toUpperCase(),
-                ip_pdv: document.getElementById('txtFilialIpPdv').value.trim(),
+                ip_pdv: ipPdv,
+                auto_align_db_ip: autoAlign,
                 configurar_sentinela: document.getElementById('chkAutoSentinela') ? document.getElementById('chkAutoSentinela').checked : true,
                 data_planejada_virada: document.getElementById('txtDataPlanejadaVirada')?.value || ''
             };
@@ -4881,8 +5027,8 @@
                 alert(`🎉 Sucesso!
 
 ${d.message}
-Caminho SDTerminal: ${d.caminho_terminal}
-IP PDV: ${d.ip_pdv}`);
+Servidor / IP Banco (PDVs): ${d.ip_pdv || ipPdv}
+Caminho SDTerminal: ${d.caminho_terminal}`);
                 
                 // Recarrega lista e detalhes
                 loadSelectedFilialDetails(fid);
