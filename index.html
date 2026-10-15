@@ -1837,13 +1837,16 @@
                         <input type="hidden" id="hdnFilialIdBairro">
                     </div>
                     <div class="form-group" style="flex: 2;">
-                        <label title="Colunas no banco: WIDCIDADE e WNOMECIDADE">Município / Cidade</label>
-                        <input type="text" id="txtFilialCidade" class="form-control" maxlength="35" placeholder="Nome da Cidade (ex: Cabo Frio)">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                            <label title="Colunas no banco: WIDCIDADE e WNOMECIDADE" style="margin-bottom: 0;">Município / Cidade</label>
+                            <span id="badgeCidadeMatch" class="badge badge-neutral" style="font-size: 10px; padding: 2px 7px;">Aguardando Verificação</span>
+                        </div>
+                        <input type="text" id="txtFilialCidade" class="form-control" maxlength="35" placeholder="Nome da Cidade (ex: Rio de Janeiro)" oninput="onFilialCidadeInput()">
                         <input type="hidden" id="hdnFilialIdCidade">
                     </div>
                     <div class="form-group" style="flex: 0.6;">
                         <label>UF</label>
-                        <input type="text" id="txtFilialUf" class="form-control" maxlength="2" style="text-align: center; text-transform: uppercase;" placeholder="UF">
+                        <input type="text" id="txtFilialUf" class="form-control" maxlength="2" style="text-align: center; text-transform: uppercase;" placeholder="UF" oninput="onFilialCidadeInput()">
                     </div>
                 </div>
             </div>
@@ -1918,13 +1921,16 @@
                         <input type="hidden" id="hdnContadorIdBairro">
                     </div>
                     <div class="form-group" style="flex: 2;">
-                        <label title="Coluna no banco: WIDCIDADECONTADOR">Cidade do Contador</label>
-                        <input type="text" id="txtContadorCidade" class="form-control" maxlength="35" placeholder="Cidade">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                            <label title="Coluna no banco: WIDCIDADECONTADOR" style="margin-bottom: 0;">Cidade do Contador</label>
+                            <span id="badgeContadorCidadeMatch" class="badge badge-neutral" style="font-size: 10px; padding: 2px 7px;">Verificação</span>
+                        </div>
+                        <input type="text" id="txtContadorCidade" class="form-control" maxlength="35" placeholder="Cidade" oninput="onContadorCidadeInput()">
                         <input type="hidden" id="hdnContadorIdCidade">
                     </div>
                     <div class="form-group" style="flex: 0.6;">
                         <label>UF</label>
-                        <input type="text" id="txtContadorUf" class="form-control" maxlength="2" style="text-align: center; text-transform: uppercase;" placeholder="UF">
+                        <input type="text" id="txtContadorUf" class="form-control" maxlength="2" style="text-align: center; text-transform: uppercase;" placeholder="UF" oninput="onContadorCidadeInput()">
                     </div>
                 </div>
             </div>
@@ -4382,6 +4388,20 @@
             document.getElementById('hdnFilialIdCidade').value = d.id_cidade || '';
             document.getElementById('txtFilialUf').value = (d.cidade_uf || '').toUpperCase();
 
+            const badgeCid = document.getElementById('badgeCidadeMatch');
+            if (badgeCid) {
+                if (d.id_cidade && d.cidade_nome) {
+                    badgeCid.className = 'badge badge-success';
+                    badgeCid.innerHTML = `✓ ID ${d.id_cidade} (${d.cidade_nome}/${d.cidade_uf || '-'} - IBGE: ${d.cidade_ibge || '-'})`;
+                } else if (d.id_cidade) {
+                    badgeCid.className = 'badge badge-warning';
+                    badgeCid.innerHTML = `ID ${d.id_cidade}`;
+                } else {
+                    badgeCid.className = 'badge badge-neutral';
+                    badgeCid.innerText = 'Aguardando Verificação';
+                }
+            }
+
             // Bloco 3: Contador (Caixa Alta)
             document.getElementById('txtContadorNome').value = (d.nome_contador || '').toUpperCase();
             document.getElementById('txtContadorCnpj').value = (d.cnpj_contador || '').toUpperCase();
@@ -4398,6 +4418,20 @@
             document.getElementById('txtContadorCidade').value = (d.cidade_contador_nome || '').toUpperCase();
             document.getElementById('hdnContadorIdCidade').value = d.id_cidade_contador || '';
             document.getElementById('txtContadorUf').value = (d.cidade_contador_uf || '').toUpperCase();
+
+            const badgeContCid = document.getElementById('badgeContadorCidadeMatch');
+            if (badgeContCid) {
+                if (d.id_cidade_contador && d.cidade_contador_nome) {
+                    badgeContCid.className = 'badge badge-success';
+                    badgeContCid.innerHTML = `✓ ID ${d.id_cidade_contador} (${d.cidade_contador_nome}/${d.cidade_contador_uf || '-'})`;
+                } else if (d.id_cidade_contador) {
+                    badgeContCid.className = 'badge badge-warning';
+                    badgeContCid.innerHTML = `ID ${d.id_cidade_contador}`;
+                } else {
+                    badgeContCid.className = 'badge badge-neutral';
+                    badgeContCid.innerText = 'Verificação';
+                }
+            }
 
             // Bloco 4: Operacional / Ambiente
             setSelectSafe('selFilialPrecos', d.filial_precos);
@@ -4457,6 +4491,109 @@
             alert(`Preparando rascunho para criação da Filial ${nextId}. Preencha o CNPJ para buscar os dados automaticamente.`);
         }
 
+        // ==========================================
+        // RESOLUÇÃO E VALIDAÇÃO DE CIDADES
+        // ==========================================
+        let debounceCidadeTimer = null;
+        function onFilialCidadeInput() {
+            document.getElementById('hdnFilialIdCidade').value = '';
+            const badge = document.getElementById('badgeCidadeMatch');
+            if (badge) {
+                badge.className = 'badge badge-warning';
+                badge.innerText = 'Verificando no banco...';
+            }
+            clearTimeout(debounceCidadeTimer);
+            debounceCidadeTimer = setTimeout(() => verificarCidadeFilial(), 450);
+        }
+
+        async function verificarCidadeFilial(ibgeCode = null) {
+            const nome = document.getElementById('txtFilialCidade').value.trim();
+            const uf = document.getElementById('txtFilialUf').value.trim().toUpperCase();
+            const badge = document.getElementById('badgeCidadeMatch');
+            if (!badge) return null;
+            if (!nome) {
+                badge.className = 'badge badge-neutral';
+                badge.innerText = 'Aguardando Cidade';
+                document.getElementById('hdnFilialIdCidade').value = '';
+                return null;
+            }
+            try {
+                const res = await apiFetch('/api/resolve-cidade', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ config: getConfig(), cidade_nome: nome, cidade_uf: uf, ibge: ibgeCode })
+                });
+                const d = await res.json();
+                if (d.success && d.found) {
+                    document.getElementById('hdnFilialIdCidade').value = d.id;
+                    document.getElementById('txtFilialCidade').value = d.nome;
+                    if (d.uf) document.getElementById('txtFilialUf').value = d.uf;
+                    badge.className = 'badge badge-success';
+                    badge.innerHTML = `✓ ID ${d.id} (${d.nome}/${d.uf || '-'} - IBGE: ${d.ibge || '-'})`;
+                    return d;
+                } else {
+                    document.getElementById('hdnFilialIdCidade').value = '';
+                    badge.className = 'badge badge-danger';
+                    badge.innerHTML = `⚠️ Não cadastrada no banco`;
+                    return null;
+                }
+            } catch(err) {
+                badge.className = 'badge badge-danger';
+                badge.innerText = 'Erro ao verificar';
+                return null;
+            }
+        }
+
+        let debounceContadorCidadeTimer = null;
+        function onContadorCidadeInput() {
+            document.getElementById('hdnContadorIdCidade').value = '';
+            const badge = document.getElementById('badgeContadorCidadeMatch');
+            if (badge) {
+                badge.className = 'badge badge-warning';
+                badge.innerText = 'Verificando...';
+            }
+            clearTimeout(debounceContadorCidadeTimer);
+            debounceContadorCidadeTimer = setTimeout(() => verificarCidadeContador(), 450);
+        }
+
+        async function verificarCidadeContador(ibgeCode = null) {
+            const nome = document.getElementById('txtContadorCidade').value.trim();
+            const uf = document.getElementById('txtContadorUf').value.trim().toUpperCase();
+            const badge = document.getElementById('badgeContadorCidadeMatch');
+            if (!badge) return null;
+            if (!nome) {
+                badge.className = 'badge badge-neutral';
+                badge.innerText = 'Verificação';
+                document.getElementById('hdnContadorIdCidade').value = '';
+                return null;
+            }
+            try {
+                const res = await apiFetch('/api/resolve-cidade', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ config: getConfig(), cidade_nome: nome, cidade_uf: uf, ibge: ibgeCode })
+                });
+                const d = await res.json();
+                if (d.success && d.found) {
+                    document.getElementById('hdnContadorIdCidade').value = d.id;
+                    document.getElementById('txtContadorCidade').value = d.nome;
+                    if (d.uf) document.getElementById('txtContadorUf').value = d.uf;
+                    badge.className = 'badge badge-success';
+                    badge.innerHTML = `✓ ID ${d.id} (${d.nome}/${d.uf || '-'})`;
+                    return d;
+                } else {
+                    document.getElementById('hdnContadorIdCidade').value = '';
+                    badge.className = 'badge badge-danger';
+                    badge.innerHTML = `⚠️ Não cadastrada`;
+                    return null;
+                }
+            } catch(err) {
+                badge.className = 'badge badge-danger';
+                badge.innerText = 'Erro';
+                return null;
+            }
+        }
+
         async function consultarCnpj() {
             const cnpjInput = document.getElementById('txtFilialCnpj');
             const cnpjVal = cnpjInput.value.trim();
@@ -4502,6 +4639,13 @@
 
                 document.getElementById('badgeCnpjApiSource').innerText = d.source || 'Receita Federal';
                 document.getElementById('badgeCnpjApiSource').className = 'badge badge-success';
+
+                // Limpa ID pré-existente e valida/resolve assertivamente no banco de dados do cliente
+                document.getElementById('hdnFilialIdCidade').value = '';
+                const matchCid = await verificarCidadeFilial(d.ibge);
+                if (!matchCid) {
+                    alert(`⚠️ ATENÇÃO - CIDADE NÃO LOCALIZADA NO BANCO DO CLIENTE:\n\nA cidade "${d.municipio} (${d.uf})" retornada pelo CNPJ NÃO foi encontrada na tabela CIDADES deste banco de dados!\n\nPara garantir 100% de acertividade e impedir que o sistema aplique uma cidade errônea (como Cabo Frio):\n1. Verifique se o nome possui acentos ou outra grafia no banco; OU\n2. Realize o cadastro da cidade no SDSuper (Menu Tabelas > Cidades).\n\nO utilitário impedirá a gravação até que a cidade seja validada com sucesso no banco.`);
+                }
 
             } catch (err) {
                 alert('Erro ao conectar ao serviço de CNPJ: ' + err.message);
@@ -4565,6 +4709,12 @@
             highlightAndSet('hdnContadorIdCidade', c.id_cidade_contador);
             highlightAndSet('txtContadorUf', c.cidade_contador_uf);
 
+            const badgeContCid = document.getElementById('badgeContadorCidadeMatch');
+            if (badgeContCid && c.id_cidade_contador && c.cidade_contador_nome) {
+                badgeContCid.className = 'badge badge-success';
+                badgeContCid.innerHTML = `✓ ID ${c.id_cidade_contador} (${c.cidade_contador_nome}/${c.cidade_contador_uf || '-'})`;
+            }
+
             alert('✅ Dados do contador copiados com sucesso da Filial 1!');
         }
 
@@ -4619,6 +4769,8 @@
             const fid = currentFilialConfigId || parseInt(document.getElementById('selFilialConfig').value) || 2;
             const razao = document.getElementById('txtFilialRazao').value.trim().toUpperCase();
             const cnpj = document.getElementById('txtFilialCnpj').value.trim().toUpperCase();
+            const cidadeNome = document.getElementById('txtFilialCidade').value.trim().toUpperCase();
+            const cidadeUf = document.getElementById('txtFilialUf').value.trim().toUpperCase();
 
             if (!razao) {
                 alert('Por favor, informe a Razão Social da filial.');
@@ -4629,6 +4781,28 @@
                 alert('Por favor, informe o CNPJ da filial.');
                 document.getElementById('txtFilialCnpj').focus();
                 return;
+            }
+            if (!cidadeNome) {
+                alert('Por favor, informe o Município/Cidade da filial.');
+                document.getElementById('txtFilialCidade').focus();
+                return;
+            }
+            if (!cidadeUf) {
+                alert('Por favor, informe a UF (Estado) da filial.');
+                document.getElementById('txtFilialUf').focus();
+                return;
+            }
+
+            // Validação rigorosa de cidade no banco antes de prosseguir
+            let filialCidId = document.getElementById('hdnFilialIdCidade').value.trim();
+            if (!filialCidId) {
+                const resCid = await verificarCidadeFilial();
+                if (!resCid || !resCid.id) {
+                    alert(`❌ BLOQUEIO DE SEGURANÇA FISCAL:\n\nA cidade "${cidadeNome} (${cidadeUf})" NÃO foi localizada na tabela CIDADES do banco de dados deste cliente!\n\nPara garantir 100% de acertividade e impedir que o sistema aplique uma cidade indevida (como Cabo Frio):\n1. Verifique a grafia e a UF; OU\n2. Realize o cadastro da cidade no SDSuper (Menu Tabelas > Cidades) antes de gravar a filial.`);
+                    document.getElementById('txtFilialCidade').focus();
+                    return;
+                }
+                filialCidId = resCid.id;
             }
 
             if (!confirm(`Confirma a gravação dos dados e cadastro da Filial ${fid} (${razao}) diretamente no banco de dados Firebird?`)) {

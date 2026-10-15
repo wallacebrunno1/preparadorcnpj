@@ -767,6 +767,7 @@ class FirebirdManager:
                         "bairro": (data.get("bairro") or "").strip(),
                         "municipio": (data.get("municipio") or "").strip(),
                         "uf": (data.get("uf") or "").strip(),
+                        "ibge": str(data.get("codigo_municipio_ibge") or "").strip(),
                         "email": (data.get("email") or "").strip(),
                         "telefone": (data.get("ddd_telefone_1") or "").strip()
                     }
@@ -794,6 +795,7 @@ class FirebirdManager:
                             "bairro": (data.get("bairro") or "").strip(),
                             "municipio": (data.get("municipio") or "").strip(),
                             "uf": (data.get("uf") or "").strip(),
+                            "ibge": "",
                             "email": (data.get("email") or "").strip(),
                             "telefone": (data.get("telefone") or "").strip()
                         }
@@ -803,28 +805,137 @@ class FirebirdManager:
         return {"success": False, "error": "Não foi possível consultar os dados do CNPJ nas APIs públicas."}
 
     @staticmethod
-    def resolve_cidade(cur, cidade_val, uf=None):
-        if not cidade_val:
-            return None
-        if str(cidade_val).isdigit() and int(cidade_val) > 0:
-            return int(cidade_val)
-        c_clean = str(cidade_val).strip()[:35]
-        if not c_clean:
-            return None
-        if uf:
-            cur.execute("SELECT WIDCIDADE FROM CIDADES WHERE UPPER(TRIM(WNOMECIDADE)) = UPPER(TRIM(?)) AND UPPER(TRIM(WSIGLA)) = UPPER(TRIM(?))", (c_clean, str(uf).strip()[:2]))
+    def normalize_text(text):
+        if not text:
+            return ""
+        return unicodedata.normalize('NFKD', str(text)).encode('ASCII', 'ignore').decode('ASCII').strip().upper()
+
+    @staticmethod
+    def resolve_cidade(cur, cidade_val, cidade_nome=None, uf=None, ibge=None):
+        """
+        Resolve assertivamente a cidade na tabela CIDADES do Firebird vinculando com ESTADOS.
+        Evita a todo custo falsos positivos e a atribuição indevida da cidade padrão (Cabo Frio - ID 6).
+        """
+        c_norm = FirebirdManager.normalize_text(cidade_nome or (cidade_val if not str(cidade_val).isdigit() else "") or "")
+        uf_clean = str(uf or "").strip().upper()[:2]
+        
+        # 1. Se fornecido código IBGE oficial de 7 dígitos
+        if ibge and str(ibge).isdigit() and int(ibge) > 0:
+            cur.execute("""
+                SELECT C.WIDCIDADE, C.WNOMECIDADE, E.WSIGLA, C.WIBGE
+                FROM CIDADES C
+                LEFT JOIN ESTADOS E ON E.WIDESTADO = C.WIDESTADO
+                WHERE C.WIBGE = ?
+            """, (int(ibge),))
             r = cur.fetchone()
             if r:
-                return r[0]
-        cur.execute("SELECT WIDCIDADE FROM CIDADES WHERE UPPER(TRIM(WNOMECIDADE)) = UPPER(TRIM(?))", (c_clean,))
-        r = cur.fetchone()
-        if r:
-            return r[0]
-        cur.execute("SELECT WIDCIDADE FROM CIDADES WHERE UPPER(WNOMECIDADE) LIKE ?", (f"%{c_clean.upper()}%",))
-        r = cur.fetchone()
-        if r:
-            return r[0]
-        return None
+                return {
+                    "found": True, 
+                    "id": r[0], 
+                    "nome": (r[1] or '').strip().upper(), 
+                    "uf": (r[2] or '').strip().upper(), 
+                    "ibge": r[3], 
+                    "match": "ibge"
+                }
+
+        # 2. Se cidade_val é um ID numérico pré-existente, verificar se o nome do banco bate com o nome desejado
+        if cidade_val and str(cidade_val).isdigit() and int(cidade_val) > 0:
+            cur.execute("""
+                SELECT C.WIDCIDADE, C.WNOMECIDADE, E.WSIGLA, C.WIBGE
+                FROM CIDADES C
+                LEFT JOIN ESTADOS E ON E.WIDESTADO = C.WIDESTADO
+                WHERE C.WIDCIDADE = ?
+            """, (int(cidade_val),))
+            r = cur.fetchone()
+            if r:
+                db_norm = FirebirdManager.normalize_text(r[1])
+                # Se não temos c_norm OU se o nome bate, aceita
+                if not c_norm or db_norm == c_norm:
+                    return {
+                        "found": True, 
+                        "id": r[0], 
+                        "nome": (r[1] or '').strip().upper(), 
+                        "uf": (r[2] or '').strip().upper(), 
+                        "ibge": r[3], 
+                        "match": "id_match"
+                    }
+                # Se o nome NÃO bate (ex: ID guardava 6/Cabo Frio mas agora o texto é RIO DE JANEIRO),
+                # descartamos o ID obsoleto e resolvemos por nome/UF abaixo.
+
+        target_name = (cidade_nome or (cidade_val if not str(cidade_val).isdigit() else "") or "").strip()
+        if not target_name:
+            return {"found": False, "id": None, "nome": "", "uf": uf_clean, "error": "Nome da cidade não informado."}
+
+        target_clean = target_name[:35].upper()
+
+        # 3. Match exato com Nome e UF (CIDADES + ESTADOS)
+        if uf_clean:
+            cur.execute("""
+                SELECT C.WIDCIDADE, C.WNOMECIDADE, E.WSIGLA, C.WIBGE
+                FROM CIDADES C
+                LEFT JOIN ESTADOS E ON E.WIDESTADO = C.WIDESTADO
+                WHERE UPPER(TRIM(C.WNOMECIDADE)) = UPPER(TRIM(?))
+                  AND UPPER(TRIM(E.WSIGLA)) = UPPER(TRIM(?))
+            """, (target_clean, uf_clean))
+            r = cur.fetchone()
+            if r:
+                return {
+                    "found": True, 
+                    "id": r[0], 
+                    "nome": (r[1] or '').strip().upper(), 
+                    "uf": (r[2] or '').strip().upper(), 
+                    "ibge": r[3], 
+                    "match": "exact_uf"
+                }
+
+        # 4. Match com normalização de acentos filtrando pela UF (ex: 'NITEROI' -> 'NITERÓI')
+        if uf_clean:
+            cur.execute("""
+                SELECT C.WIDCIDADE, C.WNOMECIDADE, E.WSIGLA, C.WIBGE
+                FROM CIDADES C
+                LEFT JOIN ESTADOS E ON E.WIDESTADO = C.WIDESTADO
+                WHERE UPPER(TRIM(E.WSIGLA)) = UPPER(TRIM(?))
+            """, (uf_clean,))
+            for r in cur.fetchall():
+                if FirebirdManager.normalize_text(r[1]) == c_norm:
+                    return {
+                        "found": True, 
+                        "id": r[0], 
+                        "nome": (r[1] or '').strip().upper(), 
+                        "uf": (r[2] or '').strip().upper(), 
+                        "ibge": r[3], 
+                        "match": "accent_norm_uf"
+                    }
+
+        # 5. Match sem UF (se UF não foi fornecida)
+        if not uf_clean:
+            cur.execute("""
+                SELECT C.WIDCIDADE, C.WNOMECIDADE, E.WSIGLA, C.WIBGE
+                FROM CIDADES C
+                LEFT JOIN ESTADOS E ON E.WIDESTADO = C.WIDESTADO
+                WHERE UPPER(TRIM(C.WNOMECIDADE)) = UPPER(TRIM(?))
+            """, (target_clean,))
+            rows = cur.fetchall()
+            if len(rows) == 1:
+                r = rows[0]
+                return {
+                    "found": True, 
+                    "id": r[0], 
+                    "nome": (r[1] or '').strip().upper(), 
+                    "uf": (r[2] or '').strip().upper(), 
+                    "ibge": r[3], 
+                    "match": "exact_no_uf"
+                }
+
+        # 6. Não localizada
+        uf_suffix = f" ({uf_clean})" if uf_clean else ""
+        return {
+            "found": False, 
+            "id": None, 
+            "nome": target_name, 
+            "uf": uf_clean, 
+            "error": f"Cidade '{target_name}'{uf_suffix} não foi localizada na tabela CIDADES do banco de dados deste cliente."
+        }
 
     @staticmethod
     def resolve_or_create_bairro(cur, bairro_name):
@@ -872,14 +983,16 @@ class FirebirdManager:
                 F.WIDFILIALPRECOS, F.WIDFILIALESTOQUE, F.WIDFILIALNFE, F.WIDFILIALSAIDASFISCAIS, F.WIDFILIALTRANSF, F.WIDFILIALMOVIMENTO, F.WIDFILIALETIQ, F.WIDFILIALCOMANDA,
                 F.WIDFILIALCARGA,
                 F.WCAMINHOSDTERMINAL, F.WIPPDV,
-                C.WNOMECIDADE, C.WSIGLA,
+                C.WNOMECIDADE, E.WSIGLA, C.WIBGE,
                 B.WNOMEBAIRRO,
-                CC.WNOMECIDADE, CC.WSIGLA,
+                CC.WNOMECIDADE, ECC.WSIGLA, CC.WIBGE,
                 CB.WNOMEBAIRRO
             FROM FILIAIS F
             LEFT JOIN CIDADES C ON C.WIDCIDADE = F.WIDCIDADE
+            LEFT JOIN ESTADOS E ON E.WIDESTADO = C.WIDESTADO
             LEFT JOIN BAIRROS B ON B.WIDBAIRRO = F.WIDBAIRRO
             LEFT JOIN CIDADES CC ON CC.WIDCIDADE = F.WIDCIDADECONTADOR
+            LEFT JOIN ESTADOS ECC ON ECC.WIDESTADO = CC.WIDESTADO
             LEFT JOIN BAIRROS CB ON CB.WIDBAIRRO = F.WIDBAIRROCONTADOR
             WHERE F.WIDFILIAL = ?
         """, (filial_id,))
@@ -892,9 +1005,10 @@ class FirebirdManager:
                 SELECT 
                     F.WNOMECONTADOR, F.WCNPJCONTADOR, F.WCPFCONTADOR, F.WCRCCONTADOR, F.WEMAILCONTADOR, F.WTELEFONECONTADOR,
                     F.WENDERECOCONTADOR, F.WNUMEROCONTADOR, F.WCOMPLEMENTOCONTADOR, F.WCEPCONTADOR, F.WIDCIDADECONTADOR, F.WIDBAIRROCONTADOR,
-                    CC.WNOMECIDADE, CC.WSIGLA, CB.WNOMEBAIRRO
+                    CC.WNOMECIDADE, ECC.WSIGLA, CB.WNOMEBAIRRO, CC.WIBGE
                 FROM FILIAIS F
                 LEFT JOIN CIDADES CC ON CC.WIDCIDADE = F.WIDCIDADECONTADOR
+                LEFT JOIN ESTADOS ECC ON ECC.WIDESTADO = CC.WIDESTADO
                 LEFT JOIN BAIRROS CB ON CB.WIDBAIRRO = F.WIDBAIRROCONTADOR
                 WHERE F.WIDFILIAL = 1
             """)
@@ -915,7 +1029,8 @@ class FirebirdManager:
                     "id_bairro_contador": r1[11],
                     "cidade_contador_nome": (r1[12] or '').strip().upper(),
                     "cidade_contador_uf": (r1[13] or '').strip().upper(),
-                    "bairro_contador_nome": (r1[14] or '').strip().upper()
+                    "bairro_contador_nome": (r1[14] or '').strip().upper(),
+                    "cidade_contador_ibge": r1[15]
                 }
 
         conn.close()
@@ -986,10 +1101,12 @@ class FirebirdManager:
             "ip_pdv": (row[37] or '').strip() or local_ip,
             "cidade_nome": (row[38] or '').strip().upper(),
             "cidade_uf": (row[39] or '').strip().upper(),
-            "bairro_nome": (row[40] or '').strip().upper(),
-            "cidade_contador_nome": (row[41] or '').strip().upper(),
-            "cidade_contador_uf": (row[42] or '').strip().upper(),
-            "bairro_contador_nome": (row[43] or '').strip().upper(),
+            "cidade_ibge": row[40],
+            "bairro_nome": (row[41] or '').strip().upper(),
+            "cidade_contador_nome": (row[42] or '').strip().upper(),
+            "cidade_contador_uf": (row[43] or '').strip().upper(),
+            "cidade_contador_ibge": row[44],
+            "bairro_contador_nome": (row[45] or '').strip().upper(),
             "contador_filial_1": contador_filial_1,
             "filiais_list": filiais_list,
             "local_ip": local_ip,
@@ -1003,10 +1120,26 @@ class FirebirdManager:
         conn = FirebirdManager.get_connection(config)
         cur = conn.cursor()
         try:
-            # Resolver cidades e bairros
-            cidade_val = payload.get('id_cidade') or payload.get('cidade_nome')
+            # Resolver cidades e bairros com acertividade rigorosa
+            cidade_val = payload.get('id_cidade')
+            cidade_nome = payload.get('cidade_nome')
             cidade_uf = payload.get('cidade_uf')
-            id_cidade = FirebirdManager.resolve_cidade(cur, cidade_val, cidade_uf)
+            
+            res_cidade = FirebirdManager.resolve_cidade(cur, cidade_val, cidade_nome, cidade_uf)
+            if not res_cidade.get('found') or not res_cidade.get('id'):
+                conn.close()
+                target_desc = f"'{cidade_nome or cidade_val}'"
+                if cidade_uf:
+                    target_desc += f" ({cidade_uf})"
+                return {
+                    "success": False,
+                    "error": (
+                        f"❌ ACERTIVIDADE DE CIDADE: A cidade {target_desc} NÃO foi localizada na tabela CIDADES do banco de dados deste cliente!\n\n"
+                        f"⚠️ Ação necessária: Para evitar erros fiscais e impedir que o sistema aplique uma cidade indevida (como Cabo Frio), "
+                        f"verifique a grafia e a UF ou realize o cadastro da cidade no SDSuper (Tabelas > Cidades) antes de gravar a filial."
+                    )
+                }
+            id_cidade = res_cidade['id']
             
             bairro_val = payload.get('id_bairro')
             bairro_nome = payload.get('bairro_nome')
@@ -1015,9 +1148,27 @@ class FirebirdManager:
             else:
                 id_bairro = FirebirdManager.resolve_or_create_bairro(cur, str(bairro_nome or '').upper())
                 
-            cidade_cont_val = payload.get('id_cidade_contador') or payload.get('cidade_contador_nome')
+            cidade_cont_val = payload.get('id_cidade_contador')
+            cidade_cont_nome = payload.get('cidade_contador_nome')
             cidade_cont_uf = payload.get('cidade_contador_uf')
-            id_cidade_cont = FirebirdManager.resolve_cidade(cur, cidade_cont_val, cidade_cont_uf)
+            
+            id_cidade_cont = None
+            if cidade_cont_nome or (cidade_cont_val and str(cidade_cont_val).isdigit()):
+                res_cont = FirebirdManager.resolve_cidade(cur, cidade_cont_val, cidade_cont_nome, cidade_cont_uf)
+                if not res_cont.get('found') or not res_cont.get('id'):
+                    conn.close()
+                    target_cont_desc = f"'{cidade_cont_nome or cidade_cont_val}'"
+                    if cidade_cont_uf:
+                        target_cont_desc += f" ({cidade_cont_uf})"
+                    return {
+                        "success": False,
+                        "error": (
+                            f"❌ ACERTIVIDADE DE CIDADE (CONTADOR): A cidade do contador {target_cont_desc} "
+                            f"NÃO existe na tabela CIDADES do banco deste cliente!\n\n"
+                            f"Verifique a grafia/UF ou cadastre a cidade no SDSuper antes de prosseguir."
+                        )
+                    }
+                id_cidade_cont = res_cont['id']
             
             bairro_cont_val = payload.get('id_bairro_contador')
             bairro_cont_nome = payload.get('bairro_contador_nome')
@@ -2156,6 +2307,22 @@ class AppHandler(http.server.SimpleHTTPRequestHandler):
         elif self.path == '/api/detect-registry':
             res = FirebirdManager.detect_registry()
             self.send_json(res)
+            return
+
+        elif self.path == '/api/resolve-cidade':
+            config = data.get('config', {})
+            cidade_nome = data.get('cidade_nome', '')
+            cidade_uf = data.get('cidade_uf', '')
+            cidade_id = data.get('id_cidade')
+            ibge = data.get('ibge')
+            try:
+                conn = FirebirdManager.get_connection(config)
+                cur = conn.cursor()
+                res = FirebirdManager.resolve_cidade(cur, cidade_id, cidade_nome, cidade_uf, ibge)
+                conn.close()
+                self.send_json({"success": True, **res})
+            except Exception as e:
+                self.send_json({"success": False, "error": str(e)})
             return
 
         elif self.path == '/api/consult-cnpj':
